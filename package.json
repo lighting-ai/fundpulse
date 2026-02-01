@@ -5,6 +5,8 @@
   "type": "module",
   "main": "electron/main.js",
   "homepage": "./",
+  "description": "本地隐私优先的基金净值追踪工具",
+  "author": "FundPulse Team",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -79,11 +81,10 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "public/favicon.ico"
+      "icon": "public/favicon-512.icns"
     },
     "linux": {
-      "target": "AppImage",
-      "icon": "public/favicon.ico"
+      "target": "AppImage"
     }
   }
 }

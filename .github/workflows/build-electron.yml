@@ -50,9 +50,10 @@ jobs:
 
       - name: Build Electron app (Windows)
         if: matrix.platform == 'win'
+        shell: cmd
         run: |
-          echo "Building Windows app..."
-          npm run electron:build:win || (echo "Build failed" && exit 1)
+          echo Building Windows app...
+          npm run electron:build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -70,8 +71,12 @@ jobs:
         if: always()
         run: |
           echo "Checking release directory..."
-          ls -la release/ || echo "Release directory not found"
-          find release -type f 2>/dev/null || echo "No files found in release directory"
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            dir release 2>nul || echo "Release directory not found"
+          else
+            ls -la release/ || echo "Release directory not found"
+            find release -type f 2>/dev/null || echo "No files found in release directory"
+          fi
 
       - name: Upload artifacts
         if: always()
