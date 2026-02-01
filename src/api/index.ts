@@ -141,7 +141,9 @@ const fetchIndexTencent = (tencentCode: string, indexKey: string): Promise<Index
       resolve(null);
     };
     
-    script.src = `http://qt.gtimg.cn/q=${tencentCode}&_callback=${callbackName}`;
+    // 使用相对协议，让浏览器自动选择 http/https
+    // 如果 HTTPS 不可用，会回退到 HTTP（但可能被浏览器阻止 Mixed Content）
+    script.src = `//qt.gtimg.cn/q=${tencentCode}&_callback=${callbackName}`;
     document.body.appendChild(script);
   });
 };
@@ -181,11 +183,24 @@ export const fetchMultipleIndices = async (keys: string[]): Promise<IndexData[]>
     }
     
     // 批量请求
+    // 注意：由于 Mixed Content 限制，HTTPS 页面无法请求 HTTP 资源
+    // 如果腾讯 API 不支持 HTTPS，会回退到单个 JSONP 请求
     const codesStr = tencentCodes.map(item => item.tencentCode).join(',');
-    const url = `http://qt.gtimg.cn/q=${codesStr}`;
     
-    const response = await fetch(url);
-    const text = await response.text();
+    // 尝试使用 HTTPS（如果支持）
+    let text: string;
+    try {
+      // 先尝试 HTTPS
+      const httpsUrl = `https://qt.gtimg.cn/q=${codesStr}`;
+      const response = await fetch(httpsUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      text = await response.text();
+    } catch (httpsError) {
+      // HTTPS 失败，回退到 JSONP 方式（在 catch 块中处理）
+      throw httpsError;
+    }
     
     // 解析多行数据：v_hkHSI="..."; v_usIXIC="...";
     const results: IndexData[] = [];

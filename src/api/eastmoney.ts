@@ -526,7 +526,7 @@ const fetchFundBasicInfoFromJBGK = async (
     // 使用 try-catch 包裹脚本添加，捕获可能的错误
     try {
       // 东方财富 F10 基本概况接口（返回包含 HTML 的 JavaScript 变量）
-      script.src = `http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jbgk&code=${fundCode}&t=${Date.now()}`;
+      script.src = `https://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jbgk&code=${fundCode}&t=${Date.now()}`;
       document.body.appendChild(script);
     } catch (e) {
       clearInterval(checkInterval);
@@ -648,7 +648,7 @@ const fetchHoldingsBasic = async (
     // 使用 try-catch 包裹脚本添加，捕获可能的错误
     try {
       // 东方财富 F10 持仓接口（返回包含 HTML 的 JavaScript 变量）
-      script.src = `http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${fundCode}&topline=10&t=${Date.now()}`;
+      script.src = `https://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${fundCode}&topline=10&t=${Date.now()}`;
       document.body.appendChild(script);
     } catch (e) {
       clearInterval(checkInterval);
