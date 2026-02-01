@@ -2,6 +2,24 @@
 
 一个纯浏览器端运行的基金净值追踪 PWA 应用，零后端、全本地存储、即开即用。
 
+## 📸 功能预览
+
+### 首页概览
+![首页](docs/screenshots/homepage.png)
+*实时指数流和热门基金排行榜*
+
+### 自选基金管理
+![自选基金](docs/screenshots/portfolio.png)
+*管理您的基金组合，查看实时收益*
+
+### 基金详情分析
+![基金详情](docs/screenshots/fund-detail.png)
+*净值走势图和重仓股分析*
+
+### 设置中心
+![设置](docs/screenshots/settings.png)
+*自定义刷新频率和偏好设置*
+
 ## ✨ 特性
 
 - 🚀 **零后端**：无服务器、无数据库、无用户系统
