@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
 import { useIndexStore } from '../store/indexStore';
+import { useSettingsStore } from '../store/settingsStore';
 import clsx from 'clsx';
 
 import { MarketIndex } from '../db/schema';
@@ -25,6 +26,7 @@ const getIndexCategory = (code: string): IndexCategory => {
 
 export function IndexBar() {
   const { indices, isLoading, loadIndices } = useIndexStore();
+  const { getRefreshIntervalMs } = useSettingsStore();
   const [selectedCategory, setSelectedCategory] = useState<IndexCategory | null>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -32,12 +34,12 @@ export function IndexBar() {
 
   useEffect(() => {
     loadIndices();
-    // 每5分钟刷新一次
+    // 根据配置的刷新间隔自动刷新指数数据
     const interval = setInterval(() => {
       loadIndices();
-    }, 5 * 60 * 1000);
+    }, getRefreshIntervalMs());
     return () => clearInterval(interval);
-  }, [loadIndices]);
+  }, [loadIndices, getRefreshIntervalMs]);
 
   // 按分类分组
   const groupedIndices = useMemo(() => {
@@ -134,119 +136,121 @@ export function IndexBar() {
 
   return (
     <div className="w-full bg-bg-deep/50 border-b border-border-subtle">
-      <style>{`
-        .index-scroll-container {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-        }
-        .index-scroll-container::-webkit-scrollbar {
-          height: 6px;
-        }
-        .index-scroll-container::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .index-scroll-container::-webkit-scrollbar-thumb {
-          background-color: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
-        }
-        .index-scroll-container::-webkit-scrollbar-thumb:hover {
-          background-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        /* 循环滚动动画 */
-        @keyframes marquee {
-          0% {
-            transform: translateX(0);
+      <div className="container mx-auto px-4">
+        <style>{`
+          .index-scroll-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
           }
-          100% {
-            transform: translateX(-50%);
+          .index-scroll-container::-webkit-scrollbar {
+            height: 6px;
           }
-        }
-        
-        .marquee-container {
-          overflow: hidden;
-          position: relative;
-          width: 100%;
-        }
-        
-        .marquee-content {
-          display: flex;
-          width: fit-content;
-        }
-        
-        .marquee-content.scrolling {
-          animation: marquee 30s linear infinite;
-        }
-        
-        .marquee-content.scrolling:hover {
-          animation-play-state: paused;
-        }
-        
-        .marquee-content.no-scroll {
-          justify-content: center;
-          width: 100%;
-        }
-      `}</style>
+          .index-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .index-scroll-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+          }
+          .index-scroll-container::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+          }
+          
+          /* 循环滚动动画 */
+          @keyframes marquee {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          
+          .marquee-container {
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+          }
+          
+          .marquee-content {
+            display: flex;
+            width: fit-content;
+          }
+          
+          .marquee-content.scrolling {
+            animation: marquee 30s linear infinite;
+          }
+          
+          .marquee-content.scrolling:hover {
+            animation-play-state: paused;
+          }
+          
+          .marquee-content.no-scroll {
+            justify-content: center;
+            width: 100%;
+          }
+        `}</style>
       
-      {isLoading && indices.length === 0 ? (
-        <div className="flex flex-col gap-3 py-3">
-          <div className="flex justify-center gap-2 px-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="skeleton w-20 h-8" />
-            ))}
-          </div>
-          <div className="flex justify-center gap-4 px-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="skeleton w-32 h-10" />
-            ))}
-          </div>
-        </div>
-      ) : groupedIndices.length === 0 ? (
-        <div className="text-text-tertiary text-sm text-center py-3">指数数据加载中...</div>
-      ) : (
-        <div className="flex flex-col gap-3 py-3">
-          {/* 第一栏：分类标签 */}
-          <div className="index-scroll-container scroll-smooth overflow-x-auto">
-            <div className="flex gap-2 px-4 justify-center min-w-max">
-              {groupedIndices.map((group) => (
-                <button
-                  key={group.category}
-                  onClick={() => setSelectedCategory(group.category)}
-                  className={clsx(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0',
-                    selectedCategory === group.category
-                      ? 'bg-accent-blue text-white'
-                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-elevated/80'
-                  )}
-                >
-                  {group.category}
-                </button>
+        {isLoading && indices.length === 0 ? (
+          <div className="flex flex-col gap-3 py-3">
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="skeleton w-20 h-8" />
+              ))}
+            </div>
+            <div className="flex justify-center gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="skeleton w-32 h-10" />
               ))}
             </div>
           </div>
-
-          {/* 第二栏：当前分类的指数列表 - 循环滚动 */}
-          {currentIndices.length > 0 ? (
-            <div ref={marqueeRef} className="marquee-container">
-              <div 
-                ref={contentRef}
-                className={clsx(
-                  'marquee-content gap-4 px-4',
-                  needsScroll ? 'scrolling' : 'no-scroll'
-                )}
-              >
-                {/* 如果需要滚动，复制一份内容以实现无缝循环 */}
-                {currentIndices.map((index) => renderIndexCard(index, '-original'))}
-                {needsScroll && currentIndices.map((index) => renderIndexCard(index, '-copy'))}
+        ) : groupedIndices.length === 0 ? (
+          <div className="text-text-tertiary text-sm text-center py-3">指数数据加载中...</div>
+        ) : (
+          <div className="flex flex-col gap-3 py-3">
+            {/* 第一栏：分类标签 */}
+            <div className="index-scroll-container scroll-smooth overflow-x-auto">
+              <div className="flex gap-2 justify-center min-w-max">
+                {groupedIndices.map((group) => (
+                  <button
+                    key={group.category}
+                    onClick={() => setSelectedCategory(group.category)}
+                    className={clsx(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0',
+                      selectedCategory === group.category
+                        ? 'bg-accent-blue text-white'
+                        : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-elevated/80'
+                    )}
+                  >
+                    {group.category}
+                  </button>
+                ))}
               </div>
             </div>
-          ) : (
-            <div className="text-text-tertiary text-sm text-center py-2">
-              暂无指数数据
-            </div>
-          )}
-        </div>
-      )}
+
+            {/* 第二栏：当前分类的指数列表 - 循环滚动 */}
+            {currentIndices.length > 0 ? (
+              <div ref={marqueeRef} className="marquee-container">
+                <div 
+                  ref={contentRef}
+                  className={clsx(
+                    'marquee-content gap-4',
+                    needsScroll ? 'scrolling' : 'no-scroll'
+                  )}
+                >
+                  {/* 如果需要滚动，复制一份内容以实现无缝循环 */}
+                  {currentIndices.map((index) => renderIndexCard(index, '-original'))}
+                  {needsScroll && currentIndices.map((index) => renderIndexCard(index, '-copy'))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-text-tertiary text-sm text-center py-2">
+                暂无指数数据
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
