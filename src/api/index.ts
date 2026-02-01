@@ -188,19 +188,12 @@ export const fetchMultipleIndices = async (keys: string[]): Promise<IndexData[]>
     const codesStr = tencentCodes.map(item => item.tencentCode).join(',');
     
     // 尝试使用 HTTPS（如果支持）
-    let text: string;
-    try {
-      // 先尝试 HTTPS
-      const httpsUrl = `https://qt.gtimg.cn/q=${codesStr}`;
-      const response = await fetch(httpsUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      text = await response.text();
-    } catch (httpsError) {
-      // HTTPS 失败，回退到 JSONP 方式（在 catch 块中处理）
-      throw httpsError;
+    const httpsUrl = `https://qt.gtimg.cn/q=${codesStr}`;
+    const response = await fetch(httpsUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
+    const text = await response.text();
     
     // 解析多行数据：v_hkHSI="..."; v_usIXIC="...";
     const results: IndexData[] = [];

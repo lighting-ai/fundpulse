@@ -100,7 +100,7 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full hover:bg-white/10 active:bg-white/20 active:scale-90 flex items-center justify-center transition-all duration-150"
           >
             <i className="ri-close-line text-xl" />
           </button>
@@ -113,12 +113,13 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={clsx(
-                'px-4 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-all relative',
+                'px-4 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-all duration-150 relative',
+                'active:scale-95',
                 activeTab === tab.id
                   ? tab.highlight
-                    ? 'border-neon-purple text-neon-purple shadow-[0_2px_15px_rgba(191,90,242,0.3)]'
-                    : 'border-neon-red text-neon-red'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                    ? 'border-neon-purple text-neon-purple shadow-[0_2px_15px_rgba(191,90,242,0.3)] active:shadow-[0_2px_10px_rgba(191,90,242,0.2)]'
+                    : 'border-neon-red text-neon-red active:border-neon-red/80'
+                  : 'border-transparent text-text-secondary hover:text-text-primary active:bg-white/5'
               )}
             >
               <i className={tab.icon} />

@@ -343,11 +343,12 @@ export function NavChart() {
               key={range.key}
               onClick={() => setTimeRange(range.key)}
               className={clsx(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
                 'backdrop-blur-sm border',
+                'active:scale-95',
                 timeRange === range.key
-                  ? 'bg-white/20 text-white border-white/30 shadow-lg shadow-blue-500/20'
-                  : 'bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary hover:border-white/20'
+                  ? 'bg-white/20 text-white border-white/30 shadow-lg shadow-blue-500/20 active:shadow-md active:shadow-blue-500/15'
+                  : 'bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary hover:border-white/20 active:bg-white/15'
               )}
             >
               {range.label}

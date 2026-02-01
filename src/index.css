@@ -363,3 +363,56 @@ body::before {
 .text-down {
   color: var(--down);
 }
+
+/* 按钮点击效果 - 全局样式 */
+button {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* 默认点击效果（如果按钮没有自定义 active 样式） */
+  transition: transform 0.15s ease-out, background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+/* 默认点击效果（仅在没有自定义 active:scale 的按钮上生效） */
+button:active:not([class*="active:scale"]) {
+  transform: scale(0.95);
+}
+
+/* 按钮点击波纹效果（可选，用于特殊按钮） */
+button.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out;
+  opacity: 0;
+  pointer-events: none;
+}
+
+button.ripple:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+  transition: width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* 按钮禁用状态 */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:disabled:active {
+  transform: none !important;
+}
+
+/* 确保禁用按钮不会缩放 */
+button:disabled.active\:scale-95 {
+  transform: none !important;
+}

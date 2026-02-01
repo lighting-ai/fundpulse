@@ -99,10 +99,10 @@ export function HomePage() {
               onClick={handleSearch}
               disabled={isSearching || !searchQuery.trim()}
               className={clsx(
-                'absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-full text-sm font-medium transition-all',
+                'absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150',
                 isSearching || !searchQuery.trim()
-                  ? 'bg-white/5 text-text-tertiary cursor-not-allowed'
-                  : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30'
+                  ? 'bg-white/5 text-text-tertiary cursor-not-allowed disabled:active:scale-100'
+                  : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 active:bg-neon-blue/40 active:scale-95 shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md'
               )}
             >
               {isSearching ? '搜索中...' : '搜索'}
@@ -134,7 +134,7 @@ export function HomePage() {
 
         <button
           onClick={() => setCurrentView('portfolio')}
-          className="mt-6 px-8 py-3 bg-neon-red/10 border border-neon-red/50 rounded-full text-neon-red hover:bg-neon-red/20 hover:shadow-[0_0_30px_rgba(255,45,85,0.4)] transition-all relative z-10"
+          className="mt-6 px-8 py-3 bg-neon-red/10 border border-neon-red/50 rounded-full text-neon-red hover:bg-neon-red/20 hover:shadow-[0_0_30px_rgba(255,45,85,0.4)] active:bg-neon-red/30 active:scale-95 active:shadow-[0_0_20px_rgba(255,45,85,0.3)] transition-all duration-150 relative z-10 font-medium"
         >
           开始体验 →
         </button>

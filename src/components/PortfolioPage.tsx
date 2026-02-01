@@ -129,7 +129,7 @@ export function PortfolioPage() {
         });
         setShowFundPreview(true);
         setShowAddModal(false);
-      } catch (error) {
+      } catch {
         // 如果获取实时数据失败，仍然显示预览（只有名称）
         setPendingFundCode(codeToAdd);
         setPendingFundInfo({
@@ -193,77 +193,69 @@ export function PortfolioPage() {
     setIsAdding(true);
     setAddMessage('');
 
-    try {
-      let amount = 0;
-      let cost: number | undefined = undefined;
+    let amount = 0;
+    let cost: number | undefined = undefined;
 
-      if (inputMode === 'amount') {
-        // 金额模式：输入金额和成本价，计算份额
-        amount = parseFloat(holdingAmount) || 0;
-        cost = parseFloat(holdingCost) || undefined;
+    if (inputMode === 'amount') {
+      // 金额模式：输入金额和成本价，计算份额
+      amount = parseFloat(holdingAmount) || 0;
+      cost = parseFloat(holdingCost) || undefined;
+    } else {
+      // 份额模式：输入成本价和数量，计算金额
+      const shares = parseFloat(holdingShares) || 0;
+      if (shares <= 0) {
+        setAddMessage('请输入持仓数量');
+        setIsAdding(false);
+        return;
+      }
+
+      cost = parseFloat(holdingCost) || undefined;
+      
+      if (cost && cost > 0) {
+        // 如果输入了成本价，直接计算金额
+        amount = shares * cost;
       } else {
-        // 份额模式：输入成本价和数量，计算金额
-        const shares = parseFloat(holdingShares) || 0;
-        if (shares <= 0) {
-          setAddMessage('请输入持仓数量');
-          setIsAdding(false);
-          return;
-        }
-
-        cost = parseFloat(holdingCost) || undefined;
-        
-        if (cost && cost > 0) {
-          // 如果输入了成本价，直接计算金额
-          amount = shares * cost;
-        } else {
-          // 如果没有输入成本价，获取当前净值作为成本价
-          try {
-            const realtimeData = await fetchFundRealtime(pendingFundCode);
-            const currentNav = realtimeData.nav || realtimeData.estimateNav || 0;
-            if (currentNav > 0) {
-              cost = currentNav;
-              amount = shares * cost;
-            } else {
-              setAddMessage('无法获取当前净值，请手动输入成本价');
-              setIsAdding(false);
-              return;
-            }
-          } catch (error) {
-            setAddMessage('获取当前净值失败，请手动输入成本价');
+        // 如果没有输入成本价，获取当前净值作为成本价
+        const realtimeData = await fetchFundRealtime(pendingFundCode).catch(() => null);
+        if (realtimeData) {
+          const currentNav = realtimeData.nav || realtimeData.estimateNav || 0;
+          if (currentNav > 0) {
+            cost = currentNav;
+            amount = shares * cost;
+          } else {
+            setAddMessage('无法获取当前净值，请手动输入成本价');
             setIsAdding(false);
             return;
           }
+        } else {
+          setAddMessage('获取当前净值失败，请手动输入成本价');
+          setIsAdding(false);
+          return;
         }
       }
-
-      const result = await addFund(pendingFundCode, amount, cost);
-      
-      if (result.success) {
-        setHoldingAmount('');
-        setHoldingCost('');
-        setHoldingShares('');
-        setPendingFundCode('');
-        setPendingFundInfo(null);
-        setShowHoldingModal(false);
-        setShowFundPreview(false);
-        setShowAddModal(false);
-        setInputCode('');
-        setAddMessage('');
-        setInputMode('amount');
-      } else {
-        setAddMessage(result.message);
-      }
-    } catch (error) {
-      setAddMessage(error instanceof Error ? error.message : '添加失败，请重试');
-    } finally {
-      setIsAdding(false);
     }
+
+    const result = await addFund(pendingFundCode, amount, cost);
+    
+    if (result.success) {
+      setHoldingAmount('');
+      setHoldingCost('');
+      setHoldingShares('');
+      setPendingFundCode('');
+      setPendingFundInfo(null);
+      setShowHoldingModal(false);
+      setShowFundPreview(false);
+      setShowAddModal(false);
+      setInputCode('');
+      setAddMessage('');
+      setInputMode('amount');
+    } else {
+      setAddMessage(result.message);
+    }
+    
+    setIsAdding(false);
   };
 
-  const handleSkipHolding = async () => {
-    setShowHoldingModal(false);
-    await handleAddWithoutHolding();
-  };
 
   const handleAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -362,7 +354,7 @@ export function PortfolioPage() {
           <h2 className="text-xl font-semibold text-text-primary">我的自选</h2>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-neon-blue/20 text-neon-blue rounded-lg hover:bg-neon-blue/30 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-neon-blue/20 text-neon-blue rounded-lg hover:bg-neon-blue/30 active:bg-neon-blue/40 active:scale-95 transition-all duration-150 flex items-center gap-2 font-medium shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md"
           >
             <i className="ri-add-line" />
             添加基金
@@ -460,14 +452,14 @@ export function PortfolioPage() {
                               ref={saveButtonRef}
                               onClick={() => handleSaveAmount(fund.fundCode)}
                               disabled={isSaving}
-                              className="w-6 h-6 rounded bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                              className="w-6 h-6 rounded bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 active:bg-neon-blue/40 active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center transition-all duration-150"
                               title="保存"
                             >
                               <i className="ri-check-line text-xs" />
                             </button>
                             <button
                               onClick={handleCancelEdit}
-                              className="w-6 h-6 rounded bg-white/10 text-text-secondary hover:bg-white/20 flex items-center justify-center transition-colors"
+                              className="w-6 h-6 rounded bg-white/10 text-text-secondary hover:bg-white/20 active:bg-white/30 active:scale-90 flex items-center justify-center transition-all duration-150"
                               title="取消"
                             >
                               <i className="ri-close-line text-xs" />
@@ -540,7 +532,7 @@ export function PortfolioPage() {
                             // TODO: 打开AI诊断
                             console.log('AI诊断', fund.fundCode);
                           }}
-                          className="w-8 h-8 rounded-full bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 hover:scale-110 transition-all flex items-center justify-center mx-auto"
+                          className="w-8 h-8 rounded-full bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 hover:scale-110 active:bg-neon-purple/30 active:scale-95 transition-all duration-150 flex items-center justify-center mx-auto"
                           title="AI 诊断"
                         >
                           <i className="ri-robot-2-line" />
@@ -550,14 +542,14 @@ export function PortfolioPage() {
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleFundClick(fund.fundCode)}
-                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-neon-blue/20 hover:text-neon-blue flex items-center justify-center transition-colors"
+                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-neon-blue/20 hover:text-neon-blue active:bg-neon-blue/30 active:scale-90 flex items-center justify-center transition-all duration-150"
                             title="详情"
                           >
                             <i className="ri-bar-chart-box-line" />
                           </button>
                           <button
                             onClick={() => removeFund(fund.fundCode)}
-                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-colors"
+                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 hover:text-red-400 active:bg-red-500/30 active:scale-90 flex items-center justify-center transition-all duration-150"
                             title="删除"
                           >
                             <i className="ri-delete-bin-line" />
@@ -585,7 +577,7 @@ export function PortfolioPage() {
                   setInputCode('');
                   setAddMessage('');
                 }}
-                className="text-text-tertiary hover:text-text-primary transition-colors"
+                className="text-text-tertiary hover:text-text-primary active:text-neon-red active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10 p-1"
               >
                 <i className="ri-close-line text-xl" />
               </button>
@@ -623,10 +615,10 @@ export function PortfolioPage() {
                   onClick={() => handleAdd()}
                   disabled={isValidating || !inputCode.trim()}
                   className={clsx(
-                    'flex-1 px-4 py-2 rounded-lg font-medium transition-colors',
+                    'flex-1 px-4 py-2.5 rounded-lg font-medium transition-all duration-150',
                     isValidating || !inputCode.trim()
-                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed'
-                      : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30'
+                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed disabled:active:scale-100'
+                      : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 active:bg-neon-blue/40 active:scale-95 shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md'
                   )}
                 >
                   {isValidating ? '验证中...' : '下一步'}
@@ -637,7 +629,7 @@ export function PortfolioPage() {
                     setInputCode('');
                     setAddMessage('');
                   }}
-                  className="px-4 py-2 bg-white/5 text-text-secondary rounded-lg hover:bg-white/10 transition-colors"
+                  className="px-4 py-2.5 bg-white/5 text-text-secondary rounded-lg hover:bg-white/10 active:bg-white/15 active:scale-95 transition-all duration-150 font-medium"
                 >
                   取消
                 </button>
@@ -659,7 +651,7 @@ export function PortfolioPage() {
                   setPendingFundCode('');
                   setPendingFundInfo(null);
                 }}
-                className="text-text-tertiary hover:text-text-primary transition-colors"
+                className="text-text-tertiary hover:text-text-primary active:text-neon-red active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10 p-1"
               >
                 <i className="ri-close-line text-xl" />
               </button>
@@ -710,10 +702,10 @@ export function PortfolioPage() {
                   onClick={handleOpenHoldingModal}
                   disabled={isAdding}
                   className={clsx(
-                    'w-full px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2',
+                    'w-full px-4 py-3 rounded-lg font-medium transition-all duration-150 flex items-center justify-center gap-2',
                     isAdding
-                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed'
-                      : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30'
+                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed disabled:active:scale-100'
+                      : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 active:bg-neon-blue/40 active:scale-95 shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md'
                   )}
                 >
                   <i className="ri-wallet-3-line" />
@@ -723,10 +715,10 @@ export function PortfolioPage() {
                   onClick={handleAddWithoutHolding}
                   disabled={isAdding}
                   className={clsx(
-                    'w-full px-4 py-2 rounded-lg font-medium transition-colors',
+                    'w-full px-4 py-2.5 rounded-lg font-medium transition-all duration-150',
                     isAdding
-                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed'
-                      : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed disabled:active:scale-100'
+                      : 'bg-white/5 text-text-secondary hover:bg-white/10 active:bg-white/15 active:scale-95'
                   )}
                 >
                   {isAdding ? '添加中...' : '直接添加（不设置持仓）'}
@@ -755,7 +747,7 @@ export function PortfolioPage() {
                     setShowFundPreview(true);
                   }
                 }}
-                className="text-text-tertiary hover:text-text-primary transition-colors"
+                className="text-text-tertiary hover:text-text-primary active:text-neon-red active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10 p-1"
               >
                 <i className="ri-close-line text-xl" />
               </button>
@@ -771,10 +763,10 @@ export function PortfolioPage() {
                     setHoldingShares('');
                   }}
                   className={clsx(
-                    'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
                     inputMode === 'amount'
-                      ? 'bg-neon-blue/20 text-neon-blue border border-neon-blue/50'
-                      : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                      ? 'bg-neon-blue/20 text-neon-blue border-2 border-neon-blue shadow-[0_0_20px_rgba(0,212,255,0.3)] active:scale-95'
+                      : 'bg-white/5 text-text-secondary hover:bg-white/10 active:bg-white/15 active:scale-95 border-2 border-transparent'
                   )}
                 >
                   按金额输入
@@ -786,10 +778,10 @@ export function PortfolioPage() {
                     setHoldingShares('');
                   }}
                   className={clsx(
-                    'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
                     inputMode === 'shares'
-                      ? 'bg-neon-blue/20 text-neon-blue border border-neon-blue/50'
-                      : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                      ? 'bg-neon-blue/20 text-neon-blue border-2 border-neon-blue shadow-[0_0_20px_rgba(0,212,255,0.3)] active:scale-95'
+                      : 'bg-white/5 text-text-secondary hover:bg-white/10 active:bg-white/15 active:scale-95 border-2 border-transparent'
                   )}
                 >
                   按数量输入
@@ -876,10 +868,10 @@ export function PortfolioPage() {
                   onClick={handleConfirmHolding}
                   disabled={isAdding}
                   className={clsx(
-                    'flex-1 px-4 py-2 rounded-lg font-medium transition-colors',
+                    'flex-1 px-4 py-2.5 rounded-lg font-medium transition-all duration-150',
                     isAdding
-                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed'
-                      : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30'
+                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed disabled:active:scale-100'
+                      : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 active:bg-neon-blue/40 active:scale-95 shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md'
                   )}
                 >
                   {isAdding ? '添加中...' : '确认添加'}
@@ -897,7 +889,7 @@ export function PortfolioPage() {
                     }
                   }}
                   disabled={isAdding}
-                  className="px-4 py-2 bg-white/5 text-text-secondary rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2.5 bg-white/5 text-text-secondary rounded-lg hover:bg-white/10 active:bg-white/15 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 font-medium"
                 >
                   返回
                 </button>

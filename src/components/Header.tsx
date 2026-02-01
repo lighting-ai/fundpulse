@@ -46,7 +46,7 @@ export function Header() {
               onClick={() => setCurrentView('home')}
               className={clsx(
                 'px-8 py-2.5 rounded-lg text-base font-medium transition-all duration-300 relative overflow-hidden',
-                'hover:bg-white/5',
+                'hover:bg-white/5 active:bg-white/10 active:scale-95',
                 currentView === 'home'
                   ? 'text-white'
                   : 'text-text-secondary hover:text-text-primary'
@@ -65,7 +65,7 @@ export function Header() {
               onClick={() => setCurrentView('portfolio')}
               className={clsx(
                 'px-8 py-2.5 rounded-lg text-base font-medium transition-all duration-300 relative overflow-hidden',
-                'hover:bg-white/5',
+                'hover:bg-white/5 active:bg-white/10 active:scale-95',
                 currentView === 'portfolio'
                   ? 'text-white'
                   : 'text-text-secondary hover:text-text-primary'
@@ -83,9 +83,18 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/lighting-ai/fundpulse"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-text-secondary hover:text-text-primary hover:text-neon-blue active:text-neon-blue active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10"
+              title="GitHub 开源地址"
+            >
+              <i className="ri-github-fill text-xl" />
+            </a>
             <button
               onClick={handleRefresh}
-              className="p-2 text-text-secondary hover:text-text-primary transition-colors"
+              className="p-2 text-text-secondary hover:text-text-primary active:text-neon-blue active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10"
               title="刷新数据"
             >
               <i
@@ -97,7 +106,7 @@ export function Header() {
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className="p-2 text-text-secondary hover:text-text-primary transition-colors"
+              className="p-2 text-text-secondary hover:text-text-primary active:text-neon-blue active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10"
               title="设置"
             >
               <i className="ri-settings-3-line text-xl" />

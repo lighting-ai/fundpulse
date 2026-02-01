@@ -122,10 +122,11 @@ export function IndexBar() {
             key={group.category}
             onClick={() => setSelectedCategory(group.category)}
             className={clsx(
-              'px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0',
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex-shrink-0',
+              'active:scale-95',
               selectedCategory === group.category
-                ? 'bg-neon-red/20 text-white shadow-[0_0_15px_rgba(255,45,85,0.3)] border border-neon-red/50'
-                : 'bg-black/30 text-text-secondary hover:text-white hover:bg-black/50 border border-transparent'
+                ? 'bg-neon-red/20 text-white shadow-[0_0_15px_rgba(255,45,85,0.3)] border border-neon-red/50 active:shadow-[0_0_10px_rgba(255,45,85,0.2)]'
+                : 'bg-black/30 text-text-secondary hover:text-white hover:bg-black/50 active:bg-black/60 border border-transparent'
             )}
           >
             {group.category}

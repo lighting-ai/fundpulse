@@ -175,10 +175,10 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
               key={type.id}
               onClick={() => setFilters({ ...filters, type: type.id as any })}
               className={clsx(
-                'px-3 py-1 rounded text-xs font-medium transition-colors',
+                'px-3 py-1 rounded text-xs font-medium transition-all duration-150',
                 filters.type === type.id
-                  ? 'bg-neon-red/20 text-neon-red'
-                  : 'text-text-secondary hover:text-white'
+                  ? 'bg-neon-red/20 text-neon-red active:bg-neon-red/30 active:scale-95'
+                  : 'text-text-secondary hover:text-white active:bg-white/10 active:scale-95'
               )}
             >
               {type.label}
@@ -332,7 +332,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                             e.stopPropagation();
                             handleAddToWatchlist(fund);
                           }}
-                          className="p-1.5 rounded-lg bg-neon-blue/10 text-neon-blue hover:bg-neon-blue/20"
+                          className="p-1.5 rounded-lg bg-neon-blue/10 text-neon-blue hover:bg-neon-blue/20 active:bg-neon-blue/30 active:scale-95 transition-all duration-150"
                           title="加入自选"
                         >
                           <i className="ri-add-line" />
@@ -342,7 +342,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                             e.stopPropagation();
                             onFundClick(fund.code);
                           }}
-                          className="p-1.5 rounded-lg bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20"
+                          className="p-1.5 rounded-lg bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 active:bg-neon-purple/30 active:scale-95 transition-all duration-150"
                           title="AI诊断"
                         >
                           <i className="ri-robot-2-line" />
@@ -370,7 +370,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                   setHoldingCost('');
                   setPendingFund(null);
                 }}
-                className="text-text-secondary hover:text-text-primary"
+                className="text-text-secondary hover:text-text-primary active:text-neon-red active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10 p-1"
               >
                 <i className="ri-close-line text-xl" />
               </button>
@@ -439,14 +439,14 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                 <button
                   onClick={handleSkipHolding}
                   disabled={isAdding}
-                  className="flex-1 px-4 py-2 border border-border-subtle rounded-lg hover:bg-bg-elevated transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 border border-border-subtle rounded-lg hover:bg-bg-elevated active:bg-white/10 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 font-medium"
                 >
                   跳过
                 </button>
                 <button
                   onClick={handleConfirmHolding}
                   disabled={isAdding}
-                  className="flex-1 px-4 py-2 bg-accent-blue hover:bg-accent-blue/80 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-neon-blue/20 hover:bg-neon-blue/30 active:bg-neon-blue/40 text-neon-blue disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 rounded-lg transition-all duration-150 font-medium shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md"
                 >
                   {isAdding ? '添加中...' : '确认添加'}
                 </button>
