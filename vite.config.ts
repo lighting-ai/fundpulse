@@ -7,7 +7,7 @@ export default defineConfig({
   // 设置基础路径，用于 GitHub Pages 子路径部署
   // 如果部署在根路径，设置为 '/'
   // 如果部署在子路径（如 /fundpulse/），设置为 '/fundpulse/'
-  base: process.env.VITE_BASE_PATH || '/fundpulse/',
+  base: process.env.VITE_BASE_PATH || (process.env.ELECTRON ? './' : '/fundpulse/'),
   plugins: [
     react(),
     VitePWA({

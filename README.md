@@ -80,12 +80,55 @@ PWA 需要图标文件，请创建以下文件：
 
 项目支持多种部署方式：
 
+- **桌面应用（Windows/macOS/Linux）**：使用 Electron 打包成 exe/dmg/AppImage
 - **GitHub Pages**：使用 GitHub Actions 自动部署
 - **Docker**：容器化部署，支持 Docker Compose
 - **Vercel/Netlify**：一键部署到云平台
 - **手动部署**：构建后上传到静态文件服务器
 
-详细部署指南请查看 [DEPLOY.md](./DEPLOY.md)
+### 桌面应用打包
+
+#### 本地构建
+
+```bash
+# 安装 Electron 依赖
+npm install
+
+# 开发模式运行
+npm run electron:dev
+
+# 构建 Windows exe
+npm run electron:build:win
+
+# 构建 macOS dmg
+npm run electron:build:mac
+
+# 构建 Linux AppImage
+npm run electron:build:linux
+```
+
+#### GitHub Actions 自动构建和发布
+
+项目已配置 GitHub Actions 自动构建流程。当您推送一个版本标签时，会自动构建并发布到 GitHub Releases：
+
+```bash
+# 1. 提交所有更改
+git add .
+git commit -m "准备发布 v1.0.0"
+
+# 2. 创建并推送标签
+git tag v1.0.0
+git push origin v1.0.0
+
+# 3. GitHub Actions 会自动：
+#    - 在 Windows、macOS、Linux 上构建应用
+#    - 创建 GitHub Release
+#    - 上传构建好的安装包
+```
+
+详细 Electron 打包指南请查看 [ELECTRON.md](./docs/ELECTRON.md)
+
+详细部署指南请查看 [DEPLOY.md](./docs/DEPLOY.md)
 
 ### 快速部署
 
