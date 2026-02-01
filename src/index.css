@@ -3,39 +3,43 @@
 @tailwind utilities;
 
 :root {
-  /* 背景层级 - 深空渐变 */
-  --bg-universe: #020617;
-  --bg-deep: #0b1220;
-  --bg-elevated: rgba(30, 41, 59, 0.4);
-  --bg-floating: rgba(51, 65, 85, 0.6);
+  /* 背景层级 - 赛博朋克渐变背景 */
+  --bg-void: #0a0a0f; /* 深蓝黑 */
+  --bg-gradient-start: #1a0a2e; /* 深紫色 */
+  --bg-gradient-end: #16213e; /* 深蓝色 */
+  --bg-surface: rgba(20, 20, 40, 0.7); /* 玻璃态卡片 */
+  --bg-elevated: rgba(30, 25, 60, 0.85); /* 悬浮层 */
 
-  /* 边框与分隔 */
-  --border-subtle: rgba(148, 163, 184, 0.1);
-  --border-glow: rgba(59, 130, 246, 0.3);
-  --border-accent: rgba(99, 102, 241, 0.5);
+  /* 核心霓虹色 (参考图2 FundMatrix) */
+  --neon-red: #ff2d55; /* 主强调 - 电光红 */
+  --neon-red-glow: rgba(255, 45, 85, 0.5);
+  --neon-blue: #00d4ff; /* 科技蓝 - 数据流动 */
+  --neon-blue-glow: rgba(0, 212, 255, 0.4);
+  --neon-purple: #bf5af2; /* AI功能色 - 紫罗兰 */
+  --neon-purple-glow: rgba(191, 90, 242, 0.5);
+  --neon-amber: #ff9f0a; /* 预警/提示 - 琥珀 */
+  --neon-cyan: #00ffff; /* 青色霓虹 */
+  --neon-pink: #ff00ff; /* 粉色霓虹 */
 
-  /* 功能色 - 金融语义 */
-  --up-primary: #ff6b6b;
-  --up-glow: rgba(255, 107, 107, 0.4);
-  --down-primary: #4ade80;
-  --down-glow: rgba(74, 222, 128, 0.4);
-
-  /* 强调色 - 交互 */
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --accent-cyan: #06b6d4;
+  /* 金融语义 (高对比) */
+  --up: #ff453a; /* 涨 - 鲜红霓虹 */
+  --down: #32d74b; /* 跌 - 翠绿霓虹 */
+  --neutral: #8e8e93; /* 中性 - 银灰 */
 
   /* 文字层级 */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
-  --text-muted: #475569;
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.4);
 
-  /* 数据可视化 */
-  --chart-line: #60a5fa;
-  --chart-area-top: rgba(96, 165, 250, 0.3);
-  --chart-area-bottom: rgba(96, 165, 250, 0);
-  --chart-grid: rgba(148, 163, 184, 0.1);
+  /* 边框与分隔 */
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-glow: rgba(255, 45, 85, 0.4);
+  --grid-line: rgba(0, 212, 255, 0.05); /* 背景网格 - 带蓝色调 */
+
+  /* 字体系统 */
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
@@ -45,95 +49,176 @@
 }
 
 body {
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  background: var(--bg-universe);
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-void) 50%, var(--bg-gradient-end) 100%);
+  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* 赛博朋克背景粒子效果 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(255, 45, 85, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(191, 90, 242, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* 玻璃卡片效果 */
+/* 基础玻璃卡片 - 增强赛博朋克效果 */
 .glass-card {
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0.01) 100%
+    rgba(0, 212, 255, 0.02) 50%,
+    rgba(191, 90, 242, 0.02) 100%
   );
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 212, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 212, 255, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
+/* 卡片内部光晕效果 */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.glass-card:hover::before {
+  opacity: 1;
+}
+
+/* 悬停态 - 霓虹边框增强 */
 .glass-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: var(--neon-blue);
   box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.2),
-    0 10px 10px -5px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(99, 102, 241, 0.2);
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    0 0 30px var(--neon-blue-glow),
+    0 0 60px rgba(0, 212, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 212, 255, 0.1);
   transform: translateY(-2px);
-}
-
-.glass-card.active {
-  border-color: rgba(59, 130, 246, 0.6);
   background: linear-gradient(
     135deg,
-    rgba(59, 130, 246, 0.1) 0%,
-    rgba(59, 130, 246, 0.02) 100%
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(0, 212, 255, 0.05) 50%,
+    rgba(191, 90, 242, 0.05) 100%
   );
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
 }
 
-/* 数字跳动动画 */
-@keyframes number-flash {
+/* 激活态 - AI功能专用（紫色） */
+.glass-card.ai-active {
+  border-color: var(--neon-purple);
+  box-shadow: 0 0 30px var(--neon-purple-glow);
+}
+
+/* 数字闪烁（数据更新时） */
+@keyframes data-flash {
   0% {
-    transform: scale(1);
+    text-shadow: 0 0 0 transparent;
     color: var(--text-primary);
   }
   50% {
-    transform: scale(1.05);
-    color: var(--accent-cyan);
-    text-shadow: 0 0 10px var(--accent-cyan);
+    text-shadow: 0 0 20px var(--neon-blue);
+    color: var(--neon-blue);
   }
   100% {
-    transform: scale(1);
+    text-shadow: 0 0 0 transparent;
     color: var(--text-primary);
   }
 }
 
 .value-updating {
-  animation: number-flash 0.3s ease-out;
+  animation: data-flash 0.3s ease-out;
 }
 
-/* 呼吸灯（实时指示） */
+/* 扫描线背景 - 增强赛博朋克效果 */
+.bg-scanline {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(0, 212, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(0, 212, 255, 0.02) 75%),
+    linear-gradient(45deg, rgba(0, 212, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(0, 212, 255, 0.02) 75%);
+  background-size: 50px 50px, 50px 50px, 100px 100px, 100px 100px;
+  background-position: 0 0, 0 0, 0 0, 50px 50px;
+  position: relative;
+}
+
+/* 扫描线动画 */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.bg-scanline::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.5), transparent);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
+
+/* 呼吸灯（实时数据指示） */
 @keyframes breathe {
   0%,
   100% {
     opacity: 0.4;
-    transform: scale(0.8);
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
+    box-shadow: 0 0 0 0 rgba(50, 215, 75, 0.4);
   }
   50% {
     opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 8px rgba(50, 215, 75, 0);
   }
 }
 
-.live-indicator {
+.live-dot {
   width: 6px;
   height: 6px;
-  background: var(--down-primary);
   border-radius: 50%;
+  background: var(--down);
   animation: breathe 2s ease-in-out infinite;
 }
 
@@ -180,7 +265,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-deep);
+  background: var(--bg-void);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -223,3 +308,58 @@ body {
 .list-item:nth-child(3) { animation-delay: 0.15s; }
 .list-item:nth-child(4) { animation-delay: 0.2s; }
 .list-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* 霓虹文字效果 */
+.neon-text {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+/* 故障艺术效果 */
+@keyframes glitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+}
+
+.glitch-effect {
+  animation: glitch 0.3s infinite;
+}
+
+/* 脉冲光晕效果 */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 212, 255, 0.6), 0 0 60px rgba(0, 212, 255, 0.3);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 涨跌颜色类 */
+.text-up {
+  color: var(--up);
+}
+
+.text-down {
+  color: var(--down);
+}

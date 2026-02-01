@@ -8,6 +8,9 @@ export interface UserWatchlist {
   addedAt: Date; // 添加时间
   sortOrder: number; // 拖拽排序顺序
   category?: string; // 基金类型（混合型、股票型等）
+  userShares?: number; // 用户持仓份额（份）
+  userCost?: number; // 用户持仓成本（买入时的净值）
+  userAmount?: number; // 用户持仓金额（元），用于快速输入
 }
 
 export interface NavHistory {

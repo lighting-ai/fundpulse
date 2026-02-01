@@ -49,7 +49,7 @@ export function FundCard({ fund }: FundCardProps) {
       {/* 删除按钮 */}
       <button
         onClick={handleRemove}
-        className="absolute top-2 right-2 p-1 text-text-secondary hover:text-up-primary transition-colors opacity-0 hover:opacity-100"
+        className="absolute top-2 right-2 p-1 text-text-secondary hover:text-up transition-colors opacity-0 hover:opacity-100"
         aria-label="删除"
       >
         <i className="ri-delete-bin-6-line text-lg" />
@@ -84,7 +84,7 @@ export function FundCard({ fund }: FundCardProps) {
             <div
               className={clsx(
                 'text-sm font-mono font-semibold flex items-center gap-1',
-                isUp ? 'text-up-primary' : 'text-down-primary'
+                isUp ? 'text-up' : 'text-down'
               )}
             >
               {isUp ? (

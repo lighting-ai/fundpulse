@@ -1,5 +1,22 @@
 // 东方财富基金 API 封装
 
+// 全局错误处理：捕获脚本语法错误
+if (typeof window !== 'undefined') {
+  const originalErrorHandler = window.onerror;
+  window.onerror = (message, source, lineno, colno, error) => {
+    // 如果是来自 FundArchivesDatas 的脚本错误，记录但不中断流程
+    if (source && source.includes('FundArchivesDatas.aspx')) {
+      console.warn('基金数据脚本加载错误（可能为网络问题）:', message);
+      return true; // 阻止默认错误处理
+    }
+    // 其他错误正常处理
+    if (originalErrorHandler) {
+      return originalErrorHandler(message, source, lineno, colno, error);
+    }
+    return false;
+  };
+}
+
 export interface RealtimeData {
   code: string;
   name: string;
@@ -328,16 +345,90 @@ const parseHoldingsFromHTML = (html: string): Array<{ stockCode: string; stockNa
 };
 
 /**
- * 步骤1：获取基金持仓基础信息（名称+占比）
- * 使用 FundArchivesDatas.aspx?type=jjcc 接口
- * 注意：该接口返回的是包含 HTML 表格的 JavaScript 变量
+ * 解析 HTML 表格提取基金基本概况数据
  */
-const fetchHoldingsBasic = async (
+const parseFundBasicInfoFromHTML = (html: string): {
+  fundName: string;
+  manager: string;
+  company: string;
+  inceptionDate: string;
+} => {
+  const result = {
+    fundName: '',
+    manager: '',
+    company: '',
+    inceptionDate: '',
+  };
+  
+  try {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // 查找表格
+    const tables = tempDiv.querySelectorAll('table');
+    if (tables.length === 0) {
+      return result;
+    }
+    
+    // 遍历所有表格行，查找关键信息
+    tables.forEach((table) => {
+      const rows = table.querySelectorAll('tbody tr, tr');
+      rows.forEach((row) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 2) {
+          const label = cells[0]?.textContent?.trim() || '';
+          const value = cells[1]?.textContent?.trim() || '';
+          
+          // 匹配不同的字段
+          if (label.includes('基金全称') || label.includes('基金简称')) {
+            if (!result.fundName && value) {
+              result.fundName = value;
+            }
+          } else if (label.includes('基金经理') || label.includes('基金经理人')) {
+            if (!result.manager && value) {
+              // 可能包含链接，提取文本
+              const link = cells[1]?.querySelector('a');
+              result.manager = link ? link.textContent?.trim() || value : value;
+            }
+          } else if (label.includes('基金管理人') || label.includes('管理公司')) {
+            if (!result.company && value) {
+              // 可能包含链接，提取文本
+              const link = cells[1]?.querySelector('a');
+              result.company = link ? link.textContent?.trim() || value : value;
+            }
+          } else if (label.includes('成立日期')) {
+            if (!result.inceptionDate && value) {
+              result.inceptionDate = value;
+            }
+          }
+        }
+      });
+    });
+  } catch (error) {
+    console.error('解析基金基本概况 HTML 失败:', error);
+  }
+  
+  return result;
+};
+
+/**
+ * 获取基金基本概况数据（从 FundArchivesDatas.aspx?type=jbgk）
+ * 使用 JSONP 形式加载
+ */
+const fetchFundBasicInfoFromJBGK = async (
   fundCode: string
-): Promise<Array<{ stockCode: string; stockName: string; ratio: number }>> => {
+): Promise<{
+  fundName: string;
+  manager: string;
+  company: string;
+  inceptionDate: string;
+}> => {
   return new Promise((resolve, reject) => {
-    const callbackName = `holding_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const script = document.createElement('script');
+    const requestId = `jbgk_${fundCode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // 保存原始的 apidata，避免被其他请求覆盖
+    const originalApidata = (window as any).apidata;
     
     const cleanup = () => {
       try {
@@ -347,8 +438,134 @@ const fetchHoldingsBasic = async (
       } catch (e) {
         // ignore
       }
+      // 清理标记
       try {
-        delete (window as any)[callbackName];
+        const apidata = (window as any).apidata;
+        if (apidata && apidata[requestId]) {
+          delete apidata[requestId];
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('获取基金基本概况数据超时'));
+    }, 20000); // 增加超时时间到20秒
+    
+    // 监听全局变量 apidata
+    let checkCount = 0;
+    const maxChecks = 200; // 增加检查次数
+    
+    const checkInterval = setInterval(() => {
+      checkCount++;
+      const apidata = (window as any).apidata;
+      
+      // 检查是否有新的 apidata，且未被当前请求处理过
+      if (apidata && apidata.content && apidata !== originalApidata && !apidata[requestId]) {
+        // 验证是否是基本概况数据（通过检查 content 中是否包含基本概况相关的关键词）
+        const contentStr = String(apidata.content || '').toLowerCase();
+        const isBasicInfoData = contentStr.includes('基金全称') || 
+                               contentStr.includes('基金简称') || 
+                               contentStr.includes('基金经理') ||
+                               contentStr.includes('基金管理人') ||
+                               contentStr.includes('成立日期');
+        
+        if (isBasicInfoData) {
+          apidata[requestId] = true; // 标记已处理，避免重复处理
+          clearInterval(checkInterval);
+          clearTimeout(timeout);
+          cleanup();
+          
+          try {
+            // 解析 HTML 表格提取基本概况数据
+            const basicInfo = parseFundBasicInfoFromHTML(apidata.content);
+            
+            if (basicInfo.fundName || basicInfo.manager || basicInfo.company || basicInfo.inceptionDate) {
+              console.log(`成功解析基金 ${fundCode} 的基本概况数据`);
+              resolve(basicInfo);
+            } else {
+              reject(new Error('未能从 HTML 中提取基本概况数据'));
+            }
+          } catch (e) {
+            console.error('解析基本概况数据失败:', e);
+            reject(e);
+          }
+        }
+      }
+      
+      if (checkCount >= maxChecks) {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+        cleanup();
+        reject(new Error('数据加载超时'));
+      }
+    }, 100);
+    
+    script.onerror = () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+      cleanup();
+      reject(new Error('加载基本概况数据失败'));
+    };
+    
+    // 捕获脚本执行错误
+    script.onload = () => {
+      // 脚本加载完成，但可能包含语法错误
+      // 通过检查 apidata 来判断是否成功
+      setTimeout(() => {
+        const apidata = (window as any).apidata;
+        if (!apidata || !apidata.content) {
+          // 如果脚本加载后没有设置 apidata，可能是语法错误
+          console.warn('脚本加载完成但未设置 apidata，可能包含语法错误');
+        }
+      }, 1000);
+    };
+    
+    // 使用 try-catch 包裹脚本添加，捕获可能的错误
+    try {
+      // 东方财富 F10 基本概况接口（返回包含 HTML 的 JavaScript 变量）
+      script.src = `http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jbgk&code=${fundCode}&t=${Date.now()}`;
+      document.body.appendChild(script);
+    } catch (e) {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+      cleanup();
+      reject(new Error('添加脚本失败'));
+    }
+  });
+};
+
+/**
+ * 步骤1：获取基金持仓基础信息（名称+占比）
+ * 使用 FundArchivesDatas.aspx?type=jjcc 接口
+ * 注意：该接口返回的是包含 HTML 表格的 JavaScript 变量
+ */
+const fetchHoldingsBasic = async (
+  fundCode: string
+): Promise<Array<{ stockCode: string; stockName: string; ratio: number }>> => {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const requestId = `jjcc_${fundCode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // 保存原始的 apidata，避免被其他请求覆盖
+    const originalApidata = (window as any).apidata;
+    
+    const cleanup = () => {
+      try {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      } catch (e) {
+        // ignore
+      }
+      // 清理标记
+      try {
+        const apidata = (window as any).apidata;
+        if (apidata && apidata[requestId]) {
+          delete apidata[requestId];
+        }
       } catch (e) {
         // ignore
       }
@@ -357,35 +574,46 @@ const fetchHoldingsBasic = async (
     const timeout = setTimeout(() => {
       cleanup();
       reject(new Error('获取持仓数据超时'));
-    }, 10000);
+    }, 20000); // 增加超时时间到20秒
     
     // 监听全局变量 apidata
     let checkCount = 0;
-    const maxChecks = 100;
+    const maxChecks = 200; // 增加检查次数
     
     const checkInterval = setInterval(() => {
       checkCount++;
       const apidata = (window as any).apidata;
       
-      if (apidata && apidata.content && !apidata._processed) {
-        apidata._processed = true; // 标记已处理，避免重复处理
-        clearInterval(checkInterval);
-        clearTimeout(timeout);
-        cleanup();
+      // 检查是否有新的 apidata，且未被当前请求处理过
+      // 同时检查 content 中是否包含持仓相关的关键词（如"股票代码"、"占净值比例"等）
+      if (apidata && apidata.content && apidata !== originalApidata && !apidata[requestId]) {
+        // 验证是否是持仓数据（通过检查 content 中是否包含持仓相关的关键词）
+        const contentStr = String(apidata.content || '').toLowerCase();
+        const isHoldingsData = contentStr.includes('股票代码') || 
+                              contentStr.includes('占净值比例') || 
+                              contentStr.includes('持仓') ||
+                              contentStr.includes('股票名称');
         
-        try {
-          // 解析 HTML 表格提取持仓数据
-          const holdings = parseHoldingsFromHTML(apidata.content);
+        if (isHoldingsData) {
+          apidata[requestId] = true; // 标记已处理，避免重复处理
+          clearInterval(checkInterval);
+          clearTimeout(timeout);
+          cleanup();
           
-          if (holdings.length > 0) {
-            console.log(`成功解析基金 ${fundCode} 的持仓数据:`, holdings.length, '条');
-            resolve(holdings);
-          } else {
-            reject(new Error('未能从 HTML 中提取持仓数据'));
+          try {
+            // 解析 HTML 表格提取持仓数据
+            const holdings = parseHoldingsFromHTML(apidata.content);
+            
+            if (holdings.length > 0) {
+              console.log(`成功解析基金 ${fundCode} 的持仓数据:`, holdings.length, '条');
+              resolve(holdings);
+            } else {
+              reject(new Error('未能从 HTML 中提取持仓数据'));
+            }
+          } catch (e) {
+            console.error('解析持仓数据失败:', e);
+            reject(e);
           }
-        } catch (e) {
-          console.error('解析持仓数据失败:', e);
-          reject(e);
         }
       }
       
@@ -404,9 +632,30 @@ const fetchHoldingsBasic = async (
       reject(new Error('加载持仓数据失败'));
     };
     
-    // 东方财富 F10 持仓接口（返回包含 HTML 的 JavaScript 变量）
-    script.src = `http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${fundCode}&topline=10`;
-    document.body.appendChild(script);
+    // 捕获脚本执行错误
+    script.onload = () => {
+      // 脚本加载完成，但可能包含语法错误
+      // 通过检查 apidata 来判断是否成功
+      setTimeout(() => {
+        const apidata = (window as any).apidata;
+        if (!apidata || !apidata.content) {
+          // 如果脚本加载后没有设置 apidata，可能是语法错误
+          console.warn('脚本加载完成但未设置 apidata，可能包含语法错误');
+        }
+      }, 1000);
+    };
+    
+    // 使用 try-catch 包裹脚本添加，捕获可能的错误
+    try {
+      // 东方财富 F10 持仓接口（返回包含 HTML 的 JavaScript 变量）
+      script.src = `http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${fundCode}&topline=10&t=${Date.now()}`;
+      document.body.appendChild(script);
+    } catch (e) {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+      cleanup();
+      reject(new Error('添加脚本失败'));
+    }
   });
 };
 
@@ -448,10 +697,124 @@ const fetchStocksRealtime = async (
 };
 
 /**
+ * 从 pingzhongdata 获取基金基本信息（备用方案）
+ */
+const fetchFundBasicInfoFromPingzhong = async (
+  code: string
+): Promise<{
+  fundName: string;
+  manager: string;
+  company: string;
+  inceptionDate: string;
+}> => {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    
+    const timeout = setTimeout(() => {
+      try {
+        document.body.removeChild(script);
+      } catch (e) {
+        // ignore
+      }
+      reject(new Error('获取基金基本信息超时'));
+    }, 10000);
+    
+    const originalVars = {
+      fS_name: (window as any).fS_name,
+      fS_manager: (window as any).fS_manager,
+      fS_fundCompany: (window as any).fS_fundCompany,
+      fS_establishDate: (window as any).fS_establishDate,
+    };
+    
+    let dataLoaded = false;
+    let checkCount = 0;
+    const maxChecks = 100;
+    
+    const checkInterval = setInterval(() => {
+      checkCount++;
+      const name = (window as any).fS_name;
+      
+      if (name && name !== originalVars.fS_name && !dataLoaded) {
+        if (checkCount < 5) {
+          return;
+        }
+        
+        dataLoaded = true;
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+        
+        try {
+          document.body.removeChild(script);
+        } catch (e) {
+          // ignore
+        }
+        
+        const fundName = (window as any).fS_name || '';
+        const manager = (window as any).fS_manager || '';
+        const company = (window as any).fS_fundCompany || '';
+        const inceptionDate = (window as any).fS_establishDate || '';
+        
+        // 恢复原始值
+        Object.keys(originalVars).forEach((key) => {
+          try {
+            if (originalVars[key as keyof typeof originalVars] !== undefined) {
+              (window as any)[key] = originalVars[key as keyof typeof originalVars];
+            } else {
+              const descriptor = Object.getOwnPropertyDescriptor(window, key);
+              if (descriptor && descriptor.configurable) {
+                delete (window as any)[key];
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+        });
+        
+        resolve({ fundName, manager, company, inceptionDate });
+      }
+      
+      if (checkCount >= maxChecks) {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+        try {
+          document.body.removeChild(script);
+        } catch (e) {
+          // ignore
+        }
+        reject(new Error('数据加载超时'));
+      }
+    }, 100);
+    
+    script.onerror = () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+      try {
+        document.body.removeChild(script);
+      } catch (e) {
+        // ignore
+      }
+      reject(new Error('网络错误'));
+    };
+    
+    script.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${Date.now()}`;
+    document.body.appendChild(script);
+  });
+};
+
+// 请求队列，避免并发冲突
+const requestQueue = new Map<string, Promise<any>>();
+
+/**
  * 获取基金详情（包含重仓股）- 使用新的API方案
- * 1. 从 pingzhongdata 获取基金基本信息
- * 2. 从 FundArchivesDatas 获取持仓信息（名称+占比）
- * 3. 从 push2.eastmoney.com 获取股票实时涨跌幅
+ * 1. 优先从 FundArchivesDatas.aspx?type=jbgk 获取基金基本信息
+ * 2. 如果失败，回退到 pingzhongdata 方式
+ * 3. 从 FundArchivesDatas 获取持仓信息（名称+占比）
+ * 4. 从 push2.eastmoney.com 获取股票实时涨跌幅
+ * 
+ * 注意：持仓数据获取失败不会影响基本信息返回
+ * 使用请求队列避免同一基金代码的并发请求冲突
  */
 export const fetchFundDetail = async (code: string): Promise<{
   fundName: string;
@@ -460,142 +823,125 @@ export const fetchFundDetail = async (code: string): Promise<{
   inceptionDate: string;
   topHoldings: Array<{ stockCode: string; stockName: string; ratio: number; changePercent?: number }>;
 }> => {
-  try {
-    // 步骤1：获取基金基本信息（从 pingzhongdata）
-    const fundBasicInfo = await new Promise<{
-      fundName: string;
-      manager: string;
-      company: string;
-      inceptionDate: string;
-    }>((resolve, reject) => {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = true;
-      
-      const timeout = setTimeout(() => {
-        try {
-          document.body.removeChild(script);
-        } catch (e) {
-          // ignore
-        }
-        reject(new Error('获取基金基本信息超时'));
-      }, 10000);
-      
-      const originalVars = {
-        fS_name: (window as any).fS_name,
-        fS_manager: (window as any).fS_manager,
-        fS_fundCompany: (window as any).fS_fundCompany,
-        fS_establishDate: (window as any).fS_establishDate,
-      };
-      
-      let dataLoaded = false;
-      let checkCount = 0;
-      const maxChecks = 100;
-      
-      const checkInterval = setInterval(() => {
-        checkCount++;
-        const name = (window as any).fS_name;
-        
-        if (name && name !== originalVars.fS_name && !dataLoaded) {
-          if (checkCount < 5) {
-            return;
-          }
-          
-          dataLoaded = true;
-          clearInterval(checkInterval);
-          clearTimeout(timeout);
+  // 如果已有相同基金代码的请求在进行，等待它完成
+  const existingRequest = requestQueue.get(code);
+  if (existingRequest) {
+    console.log(`基金 ${code} 的请求已在进行中，等待完成...`);
+    return existingRequest;
+  }
+  
+  // 创建新的请求
+  const requestPromise = (async () => {
+    try {
+      // 步骤1：并行获取基金基本信息和持仓数据，提高加载速度
+      const [basicInfoResult, holdingsResult] = await Promise.allSettled([
+        // 获取基金基本信息（优先使用 jbgk 接口）
+        (async () => {
+          let fundBasicInfo: {
+            fundName: string;
+            manager: string;
+            company: string;
+            inceptionDate: string;
+          };
           
           try {
-            document.body.removeChild(script);
-          } catch (e) {
-            // ignore
-          }
-          
-          const fundName = (window as any).fS_name || '';
-          const manager = (window as any).fS_manager || '';
-          const company = (window as any).fS_fundCompany || '';
-          const inceptionDate = (window as any).fS_establishDate || '';
-          
-          // 恢复原始值
-          Object.keys(originalVars).forEach((key) => {
+            fundBasicInfo = await fetchFundBasicInfoFromJBGK(code);
+            console.log('从 jbgk 接口获取基金基本信息成功');
+          } catch (error) {
+            console.warn('从 jbgk 接口获取基金基本信息失败，尝试 pingzhongdata:', error);
             try {
-              if (originalVars[key as keyof typeof originalVars] !== undefined) {
-                (window as any)[key] = originalVars[key as keyof typeof originalVars];
-              } else {
-                const descriptor = Object.getOwnPropertyDescriptor(window, key);
-                if (descriptor && descriptor.configurable) {
-                  delete (window as any)[key];
-                }
-              }
-            } catch (e) {
-              // ignore
+              fundBasicInfo = await fetchFundBasicInfoFromPingzhong(code);
+              console.log('从 pingzhongdata 获取基金基本信息成功');
+            } catch (pingzhongError) {
+              console.error('获取基金基本信息失败:', pingzhongError);
+              // 即使失败也返回空数据，避免阻塞
+              fundBasicInfo = {
+                fundName: '',
+                manager: '',
+                company: '',
+                inceptionDate: '',
+              };
             }
-          });
-          
-          resolve({ fundName, manager, company, inceptionDate });
-        }
-        
-        if (checkCount >= maxChecks) {
-          clearInterval(checkInterval);
-          clearTimeout(timeout);
-          try {
-            document.body.removeChild(script);
-          } catch (e) {
-            // ignore
           }
-          reject(new Error('数据加载超时'));
-        }
-      }, 100);
+          
+          // 如果基本信息中没有基金名称，尝试从实时数据接口获取
+          if (!fundBasicInfo.fundName) {
+            try {
+              const realtimeData = await fetchFundRealtime(code);
+              if (realtimeData.name) {
+                fundBasicInfo.fundName = realtimeData.name;
+                console.log(`从实时数据接口获取基金名称: ${realtimeData.name}`);
+              }
+            } catch (error) {
+              console.warn('从实时数据接口获取基金名称失败:', error);
+            }
+          }
+          
+          return fundBasicInfo;
+        })(),
+        // 获取持仓数据（与基本信息并行，不等待）
+        (async () => {
+          try {
+            const basicHoldings = await fetchHoldingsBasic(code);
+            
+            if (basicHoldings.length > 0) {
+              // 获取股票实时涨跌幅
+              const stockCodes = basicHoldings.map(h => h.stockCode);
+              const realtimeMap = await fetchStocksRealtime(stockCodes);
+              
+              // 合并数据
+              const topHoldings = basicHoldings.map(holding => {
+                const realtime = realtimeMap.get(holding.stockCode);
+                return {
+                  ...holding,
+                  changePercent: realtime?.changePercent,
+                };
+              });
+              
+              // 按持仓占比排序（降序）
+              topHoldings.sort((a, b) => b.ratio - a.ratio);
+              return topHoldings;
+            }
+            return [];
+          } catch (error) {
+            console.warn('获取持仓数据失败:', error);
+            return [];
+          }
+        })(),
+      ]);
       
-      script.onerror = () => {
-        clearInterval(checkInterval);
-        clearTimeout(timeout);
-        try {
-          document.body.removeChild(script);
-        } catch (e) {
-          // ignore
-        }
-        reject(new Error('网络错误'));
-      };
+      // 提取结果
+      const fundBasicInfo = basicInfoResult.status === 'fulfilled' 
+        ? basicInfoResult.value 
+        : {
+            fundName: '',
+            manager: '',
+            company: '',
+            inceptionDate: '',
+          };
       
-      script.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${Date.now()}`;
-      document.body.appendChild(script);
-    });
-    
-    // 步骤2：获取持仓基础信息（名称+占比）
-    const basicHoldings = await fetchHoldingsBasic(code);
-    
-    if (basicHoldings.length === 0) {
+      const topHoldings = holdingsResult.status === 'fulfilled' 
+        ? holdingsResult.value 
+        : [];
+      
       return {
         ...fundBasicInfo,
-        topHoldings: [],
+        topHoldings,
       };
+    } catch (error) {
+      // 确保错误时也从队列中移除
+      console.error('获取基金详情失败:', error);
+      throw error;
+    } finally {
+      // 请求完成后从队列中移除（无论成功还是失败）
+      requestQueue.delete(code);
     }
-    
-    // 步骤3：获取股票实时涨跌幅
-    const stockCodes = basicHoldings.map(h => h.stockCode);
-    const realtimeMap = await fetchStocksRealtime(stockCodes);
-    
-    // 合并数据
-    const topHoldings = basicHoldings.map(holding => {
-      const realtime = realtimeMap.get(holding.stockCode);
-      return {
-        ...holding,
-        changePercent: realtime?.changePercent,
-      };
-    });
-    
-    // 按持仓占比排序（降序）
-    topHoldings.sort((a, b) => b.ratio - a.ratio);
-    
-    return {
-      ...fundBasicInfo,
-      topHoldings,
-    };
-  } catch (error) {
-    console.error('获取基金详情失败:', error);
-    throw error;
-  }
+  })();
+  
+  // 将请求添加到队列
+  requestQueue.set(code, requestPromise);
+  
+  return requestPromise;
 };
 
 /**

@@ -14,6 +14,9 @@ interface DetailStore {
   setTimeRange: (range: DetailStore['timeRange']) => void;
 }
 
+// 正在加载的请求集合，防止重复请求
+const loadingNavHistory = new Set<string>();
+
 export const useDetailStore = create<DetailStore>((set, get) => ({
   fundDetail: null,
   navHistory: [],
@@ -23,6 +26,12 @@ export const useDetailStore = create<DetailStore>((set, get) => ({
 
   // 加载基金详情
   loadFundDetail: async (code: string) => {
+    // 防止重复加载
+    const { isLoading } = get();
+    if (isLoading) {
+      return;
+    }
+    
     set({ isLoading: true, error: null });
     try {
       // 先尝试从缓存读取
@@ -65,6 +74,13 @@ export const useDetailStore = create<DetailStore>((set, get) => ({
 
   // 加载净值历史
   loadNavHistory: async (code: string, range: DetailStore['timeRange'] = '30d') => {
+    // 防止重复加载：如果该基金代码正在加载，则跳过
+    const requestKey = `${code}_${range}`;
+    if (loadingNavHistory.has(requestKey)) {
+      return;
+    }
+    
+    loadingNavHistory.add(requestKey);
     set({ isLoading: true, error: null });
     try {
       // 先尝试从缓存读取
@@ -126,6 +142,7 @@ export const useDetailStore = create<DetailStore>((set, get) => ({
     } catch (error) {
       set({ error: error instanceof Error ? error.message : '加载失败' });
     } finally {
+      loadingNavHistory.delete(requestKey);
       set({ isLoading: false });
     }
   },
