@@ -2,18 +2,32 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { useFundStore } from '../store/fundStore';
 import { useAppStore } from '../store/appStore';
+import { useIndexStore } from '../store/indexStore';
 import { SettingsModal } from './SettingsModal';
 
 export function Header() {
   const { updateRealtimeData } = useFundStore();
-  const { currentView, setCurrentView } = useAppStore();
+  const { currentView, setCurrentView, triggerRankingRefresh } = useAppStore();
+  const { refreshIndices } = useIndexStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await updateRealtimeData();
-    setTimeout(() => setIsRefreshing(false), 1000);
+    try {
+      if (currentView === 'home') {
+        // 首页：刷新指数和排行榜
+        triggerRankingRefresh(); // 触发排行榜刷新（同步操作）
+        await refreshIndices(); // 刷新指数数据
+      } else {
+        // 自选页：刷新自选列表
+        await updateRealtimeData();
+      }
+    } catch (error) {
+      console.error('刷新失败:', error);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 1000);
+    }
   };
 
   return (

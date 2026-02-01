@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { fetchFundRanking, RankedFund } from '../api/fundRanking';
 import { useFundStore } from '../store/fundStore';
+import { useAppStore } from '../store/appStore';
 
 interface FundRankingSectionProps {
   onFundClick: (code: string) => void;
@@ -15,6 +16,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const { addFund } = useFundStore();
+  const { refreshRankingTrigger } = useAppStore();
   const [showHoldingModal, setShowHoldingModal] = useState(false);
   const [pendingFund, setPendingFund] = useState<RankedFund | null>(null);
   const [holdingAmount, setHoldingAmount] = useState<string>('');
@@ -22,11 +24,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [addMessage, setAddMessage] = useState('');
 
-  useEffect(() => {
-    loadRanking();
-  }, [filters]);
-
-  const loadRanking = async () => {
+  const loadRanking = useCallback(async () => {
     setIsLoading(true);
     try {
       // 今日热门：使用1nzf排序（日涨幅）
@@ -50,7 +48,11 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters.type]);
+
+  useEffect(() => {
+    loadRanking();
+  }, [loadRanking, refreshRankingTrigger]); // 监听刷新触发器
 
   const filteredFunds = funds.filter(fund => {
     if (!searchQuery) return true;
