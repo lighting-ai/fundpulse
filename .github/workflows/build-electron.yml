@@ -14,6 +14,9 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false  # 即使一个平台失败，其他平台继续构建
       matrix:
@@ -37,14 +40,14 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        shell: bash -l {0}
+        shell: bash
         run: |
           echo "尝试使用 npm ci 安装依赖..."
           npm ci || (echo "package-lock.json 不同步，使用 npm install 更新..." && npm install)
           npm list electron electron-builder || true
 
       - name: Build application
-        shell: bash -l {0}
+        shell: bash
         run: npm run build
         env:
           VITE_BASE_PATH: './'
@@ -53,7 +56,7 @@ jobs:
 
       - name: Build Electron app (Windows)
         if: matrix.platform == 'win'
-        shell: bash -l {0}
+        shell: bash
         run: |
           echo "Building Windows app..."
           npm run electron:build:win
@@ -62,6 +65,7 @@ jobs:
 
       - name: Build Electron app (macOS)
         if: matrix.platform == 'mac'
+        shell: bash
         run: |
           echo "Building macOS app..."
           npm run electron:build:mac || (echo "Build failed" && exit 1)
@@ -72,7 +76,7 @@ jobs:
 
       - name: List release files
         if: always()
-        shell: bash -l {0}
+        shell: bash
         run: |
           echo "Checking release directory..."
           if [ -d "release" ]; then
