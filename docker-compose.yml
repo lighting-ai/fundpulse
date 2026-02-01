@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  fundpulse:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fundpulse
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    labels:
+      - "com.fundpulse.description=FundPulse基金看板应用"
+      - "com.fundpulse.version=0.1.0"

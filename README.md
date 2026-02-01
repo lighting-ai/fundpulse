@@ -58,6 +58,27 @@ PWA 需要图标文件，请创建以下文件：
 - 基金数据：东方财富网（天天基金）
 - 指数数据：新浪财经
 
+## 🚀 部署
+
+项目支持多种部署方式：
+
+- **GitHub Pages**：使用 GitHub Actions 自动部署
+- **Docker**：容器化部署，支持 Docker Compose
+- **Vercel/Netlify**：一键部署到云平台
+- **手动部署**：构建后上传到静态文件服务器
+
+详细部署指南请查看 [DEPLOY.md](./DEPLOY.md)
+
+### 快速部署
+
+```bash
+# Docker 部署
+docker-compose up -d
+
+# 或使用部署脚本
+./scripts/deploy.sh docker-run
+```
+
 ## ⚠️ 免责声明
 
 数据仅供参考，不构成投资建议。市场有风险，入市需谨慎。
