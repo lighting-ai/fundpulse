@@ -45,7 +45,7 @@ const FIELD_INDEX = {
 };
 
 // 请求队列，避免并发冲突
-let rankDataRequestQueue: Array<{
+const rankDataRequestQueue: Array<{
   requestId: string;
   resolve: (data: RankedFund[]) => void;
   reject: (error: Error) => void;
@@ -148,20 +148,7 @@ export const fetchFundRanking = (options: {
     type = 'all',
     sortBy = '1nzf', // 默认今日涨幅
     pageSize = 50,
-    pageIndex = 1
   } = options;
-
-  // 计算日期范围（近1年）- 使用带横线的格式 YYYY-MM-DD
-  const end = new Date();
-  const start = new Date();
-  start.setFullYear(start.getFullYear() - 1);
-  
-  const fmt = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
   // 构建参数（简化版，参考用户测试代码）
   const params = new URLSearchParams({
@@ -171,8 +158,9 @@ export const fetchFundRanking = (options: {
     sc: sortBy,
     st: 'desc',
     pn: pageSize.toString(),
-    _: Date.now().toString()
   });
+  // 添加时间戳参数避免缓存
+  params.append('_', Date.now().toString());
 
   return new Promise((resolve, reject) => {
     // 初始化全局 setter（如果还没初始化）

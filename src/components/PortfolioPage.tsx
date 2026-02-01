@@ -26,10 +26,6 @@ export function PortfolioPage() {
     return sum + userCost * userShares;
   }, 0);
 
-  // 计算累计收益
-  const totalProfit = totalAssets - totalCost;
-  const totalProfitPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
-
   // 计算今日盈亏
   const todayChange = watchlist.reduce((sum, fund) => {
     const userShares = fund.userShares || 0;

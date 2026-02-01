@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { db, UserWatchlist, NavHistory, FundDetail } from '../db/schema';
-import { fetchFundRealtime, fetchFundHistory, fetchFundDetail, validateFundCode } from '../api/eastmoney';
+import { db, UserWatchlist, NavHistory } from '../db/schema';
+import { fetchFundRealtime, fetchFundHistory, validateFundCode } from '../api/eastmoney';
 
 export interface FundRealtimeInfo extends UserWatchlist {
   nav?: number;

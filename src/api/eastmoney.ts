@@ -34,7 +34,7 @@ export interface NavHistoryItem {
 }
 
 // JSONP 请求队列，处理并发请求
-let jsonpQueue: Array<{
+const jsonpQueue: Array<{
   code: string;
   resolve: (data: RealtimeData) => void;
   reject: (error: Error) => void;

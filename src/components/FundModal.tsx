@@ -130,11 +130,11 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-scanline">
           {activeTab === 'overview' && (
-            <FundOverview fundCode={fundCode} fundDetail={fundDetail} fund={fund} />
+            <FundOverview fundDetail={fundDetail} fund={fund} />
           )}
           {activeTab === 'chart' && <NavChart />}
           {activeTab === 'holdings' && <TopHoldings />}
-          {activeTab === 'ai' && <AIDiagnosis fundCode={fundCode} />}
+          {activeTab === 'ai' && <AIDiagnosis />}
         </div>
       </div>
     </div>
@@ -142,7 +142,7 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
 }
 
 // 基金概况组件
-function FundOverview({ fundCode, fundDetail, fund }: any) {
+function FundOverview({ fundDetail, fund }: any) {
   const { isLoading } = useDetailStore();
 
   // 加载中状态 - 显示骨架屏
@@ -231,7 +231,7 @@ function FundOverview({ fundCode, fundDetail, fund }: any) {
 }
 
 // AI诊断组件（占位符，后续实现）
-function AIDiagnosis({ fundCode }: { fundCode: string }) {
+function AIDiagnosis() {
   return (
     <div className="glass-card p-8 text-center">
       <i className="ri-robot-2-line text-5xl text-neon-purple mb-4 block" />

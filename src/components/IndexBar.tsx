@@ -52,7 +52,7 @@ export function IndexBar() {
     });
 
     return Object.entries(groups)
-      .filter(([_, indices]) => indices.length > 0)
+      .filter(([, indices]) => indices.length > 0)
       .map(([category, indices]) => ({
         category: category as IndexCategory,
         indices,
