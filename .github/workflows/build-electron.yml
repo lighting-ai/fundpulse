@@ -37,16 +37,14 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        shell: bash
+        shell: bash -l {0}
         run: |
-          # 如果 npm ci 失败（package-lock.json 不同步），使用 npm install 更新
-          if ! npm ci; then
-            echo "package-lock.json 不同步，使用 npm install 更新..."
-            npm install
-          fi
+          echo "尝试使用 npm ci 安装依赖..."
+          npm ci || (echo "package-lock.json 不同步，使用 npm install 更新..." && npm install)
           npm list electron electron-builder || true
 
       - name: Build application
+        shell: bash -l {0}
         run: npm run build
         env:
           VITE_BASE_PATH: './'
@@ -55,9 +53,9 @@ jobs:
 
       - name: Build Electron app (Windows)
         if: matrix.platform == 'win'
-        shell: cmd
+        shell: bash -l {0}
         run: |
-          echo Building Windows app...
+          echo "Building Windows app..."
           npm run electron:build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -74,13 +72,17 @@ jobs:
 
       - name: List release files
         if: always()
+        shell: bash -l {0}
         run: |
           echo "Checking release directory..."
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            dir release 2>nul || echo "Release directory not found"
-          else
-            ls -la release/ || echo "Release directory not found"
+          if [ -d "release" ]; then
+            echo "Release directory contents:"
+            ls -la release/ || echo "Cannot list release directory"
+            echo ""
+            echo "Release files:"
             find release -type f 2>/dev/null || echo "No files found in release directory"
+          else
+            echo "Release directory not found"
           fi
 
       - name: Upload artifacts
