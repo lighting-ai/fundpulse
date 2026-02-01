@@ -38,7 +38,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci || npm install
+          # 如果 npm ci 失败（package-lock.json 不同步），使用 npm install 更新
+          if ! npm ci; then
+            echo "package-lock.json 不同步，使用 npm install 更新..."
+            npm install
+          fi
           npm list electron electron-builder || true
 
       - name: Build application
