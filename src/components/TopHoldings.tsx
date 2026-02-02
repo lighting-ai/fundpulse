@@ -50,24 +50,24 @@ export function TopHoldings() {
   const totalRatio = fundDetail.topHoldings.reduce((sum, h) => sum + h.ratio, 0);
 
   return (
-    <div className="glass-card p-6">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <i className="ri-stack-line text-xl text-text-secondary" />
-          <h3 className="text-lg font-semibold text-text-primary">前十大重仓股</h3>
+    <div className="glass-card p-3 sm:p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <i className="ri-stack-line text-lg sm:text-xl text-text-secondary" />
+          <h3 className="text-base sm:text-lg font-semibold text-text-primary">前十大重仓股</h3>
         </div>
-        <span className="text-xs text-text-tertiary">
+        <span className="text-[10px] sm:text-xs text-text-tertiary">
           持仓合计: {totalRatio.toFixed(2)}%
         </span>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-xs sm:text-sm">
           <thead>
             <tr className="text-text-tertiary border-b border-white/10">
-              <th className="text-left py-3 px-2 font-normal">股票名称</th>
-              <th className="text-right py-3 px-2 font-normal">持仓占比</th>
-              <th className="text-right py-3 px-2 font-normal">涨跌幅</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-normal text-[10px] sm:text-xs min-w-0">股票名称</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-normal text-[10px] sm:text-xs whitespace-nowrap">持仓占比</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-normal text-[10px] sm:text-xs whitespace-nowrap">涨跌幅</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -76,26 +76,26 @@ export function TopHoldings() {
                 key={holding.stockCode}
                 className="hover:bg-white/5 transition-colors"
               >
-                <td className="py-3 px-2">
-                  <div className="flex flex-col">
-                    <span className="text-text-primary font-medium">
+                <td className="py-2 sm:py-3 px-2 sm:px-3 min-w-0">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-text-primary font-medium text-xs sm:text-sm truncate" title={holding.stockName || '未知'}>
                       {holding.stockName || '未知'}
                     </span>
-                    <span className="text-xs text-text-tertiary font-mono">
+                    <span className="text-[10px] sm:text-xs text-text-tertiary font-mono">
                       {holding.stockCode}
                     </span>
                   </div>
                 </td>
-                <td className="text-right py-3 px-2">
-                  <span className="text-text-primary font-mono font-semibold">
+                <td className="text-right py-2 sm:py-3 px-2 sm:px-3 whitespace-nowrap">
+                  <span className="text-text-primary font-mono font-semibold text-xs sm:text-sm">
                     {holding.ratio.toFixed(2)}%
                   </span>
                 </td>
-                <td className="text-right py-3 px-2">
+                <td className="text-right py-2 sm:py-3 px-2 sm:px-3 whitespace-nowrap">
                   {holding.changePercent !== undefined ? (
                     <span
                       className={clsx(
-                        'font-mono font-medium',
+                        'font-mono font-medium text-xs sm:text-sm',
                         holding.changePercent > 0
                           ? 'text-up'
                           : holding.changePercent < 0
@@ -107,7 +107,7 @@ export function TopHoldings() {
                       {holding.changePercent.toFixed(2)}%
                     </span>
                   ) : (
-                    <span className="text-text-tertiary">--</span>
+                    <span className="text-text-tertiary text-xs sm:text-sm">--</span>
                   )}
                 </td>
               </tr>

@@ -291,43 +291,43 @@ export function NavChart() {
   }
 
   return (
-    <div className="space-y-6 transition-opacity duration-300">
+    <div className="space-y-4 sm:space-y-6 transition-opacity duration-300">
       {/* 统计信息卡片 */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="glass-card p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
-            <div className="text-xs text-text-tertiary mb-1.5 font-medium">最新净值</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+          <div className="glass-card p-3 sm:p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
+            <div className="text-[10px] sm:text-xs text-text-tertiary mb-1 sm:mb-1.5 font-medium">最新净值</div>
             <div className={clsx(
-              'text-xl font-mono font-semibold',
+              'text-base sm:text-lg md:text-xl font-mono font-semibold',
               stats.changePercent >= 0 ? 'text-up' : 'text-down'
             )}>
               {stats.latest.toFixed(4)}
             </div>
           </div>
-          <div className="glass-card p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
-            <div className="text-xs text-text-tertiary mb-1.5 font-medium">期间涨跌</div>
+          <div className="glass-card p-3 sm:p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
+            <div className="text-[10px] sm:text-xs text-text-tertiary mb-1 sm:mb-1.5 font-medium">期间涨跌</div>
             <div className={clsx(
-              'text-xl font-mono font-semibold',
+              'text-base sm:text-lg md:text-xl font-mono font-semibold',
               stats.changePercent >= 0 ? 'text-up' : 'text-down'
             )}>
               {stats.changePercent >= 0 ? '+' : ''}{stats.changePercent.toFixed(2)}%
             </div>
           </div>
-          <div className="glass-card p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
-            <div className="text-xs text-text-tertiary mb-1.5 font-medium">最高净值</div>
-            <div className="text-xl font-mono font-semibold text-text-primary">
+          <div className="glass-card p-3 sm:p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
+            <div className="text-[10px] sm:text-xs text-text-tertiary mb-1 sm:mb-1.5 font-medium">最高净值</div>
+            <div className="text-base sm:text-lg md:text-xl font-mono font-semibold text-text-primary">
               {stats.max.toFixed(4)}
             </div>
-            <div className="text-xs text-text-tertiary mt-1">
+            <div className="text-[10px] sm:text-xs text-text-tertiary mt-0.5 sm:mt-1">
               {new Date(stats.maxDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
             </div>
           </div>
-          <div className="glass-card p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
-            <div className="text-xs text-text-tertiary mb-1.5 font-medium">最低净值</div>
-            <div className="text-xl font-mono font-semibold text-text-primary">
+          <div className="glass-card p-3 sm:p-4 backdrop-blur-xl bg-white/5 border-white/10 transition-all duration-300 hover:scale-105">
+            <div className="text-[10px] sm:text-xs text-text-tertiary mb-1 sm:mb-1.5 font-medium">最低净值</div>
+            <div className="text-base sm:text-lg md:text-xl font-mono font-semibold text-text-primary">
               {stats.min.toFixed(4)}
             </div>
-            <div className="text-xs text-text-tertiary mt-1">
+            <div className="text-[10px] sm:text-xs text-text-tertiary mt-0.5 sm:mt-1">
               {new Date(stats.minDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
             </div>
           </div>
@@ -335,15 +335,15 @@ export function NavChart() {
       )}
 
       {/* 图表容器 */}
-      <div className="glass-card p-6 backdrop-blur-xl bg-white/5 border-white/10">
+      <div className="glass-card p-3 sm:p-4 md:p-6 backdrop-blur-xl bg-white/5 border-white/10">
         {/* 时间范围切换 - Apple风格 */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 flex-wrap">
           {ranges.map((range) => (
             <button
               key={range.key}
               onClick={() => setTimeRange(range.key)}
               className={clsx(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                'px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150',
                 'backdrop-blur-sm border',
                 'active:scale-95',
                 timeRange === range.key
@@ -358,21 +358,23 @@ export function NavChart() {
 
         {/* 图表 */}
         {isLoading ? (
-          <div className="h-[450px] w-full flex items-center justify-center animate-pulse">
+          <div className="h-[300px] sm:h-[400px] md:h-[450px] w-full flex items-center justify-center animate-pulse">
             <div className="text-center">
-              <i className="ri-loader-4-line animate-spin text-4xl text-text-tertiary mb-3 block" />
-              <div className="text-text-secondary">正在加载图表数据...</div>
+              <i className="ri-loader-4-line animate-spin text-3xl sm:text-4xl text-text-tertiary mb-3 block" />
+              <div className="text-xs sm:text-sm text-text-secondary">正在加载图表数据...</div>
             </div>
           </div>
         ) : (
           <div className="transition-opacity duration-500">
-            <ReactECharts
-              key={`chart-${chartData.dates.length}-${chartData.values.length}-${timeRange}`}
-              option={option}
-              style={{ height: '450px', width: '100%' }}
-              opts={{ renderer: 'svg', locale: 'ZH' }}
-              notMerge={false}
-            />
+            <div className="h-[300px] sm:h-[400px] md:h-[450px] w-full">
+              <ReactECharts
+                key={`chart-${chartData.dates.length}-${chartData.values.length}-${timeRange}`}
+                option={option}
+                style={{ height: '100%', width: '100%' }}
+                opts={{ renderer: 'svg', locale: 'ZH' }}
+                notMerge={false}
+              />
+            </div>
           </div>
         )}
       </div>

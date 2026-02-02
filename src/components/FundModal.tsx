@@ -71,29 +71,32 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl h-[80vh] glass-card overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+        className="w-full h-[calc(100vh-3.5rem)] sm:h-[80vh] sm:max-w-4xl sm:rounded-xl glass-card overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 mt-[3.75rem] sm:mt-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
-          <div>
-            <h2 className="text-xl font-display font-bold text-text-primary">
+        <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-white/10 bg-white/5 relative">
+          <div className="flex-1 min-w-0 pr-2">
+            <h2 
+              className="text-base sm:text-lg md:text-xl font-display font-bold text-text-primary truncate"
+              title={displayFundName}
+            >
               {displayFundName}
             </h2>
-            <div className="flex items-center gap-3 mt-1 text-sm text-text-secondary">
-              <span>{fundCode}</span>
+            <div className="flex items-center gap-1.5 sm:gap-3 mt-1 text-xs sm:text-sm text-text-secondary flex-wrap">
+              <span className="font-mono">{fundCode}</span>
               {fundDetail && (
                 <>
-                  <span className="w-1 h-1 rounded-full bg-text-tertiary" />
-                  <span>{fundDetail.manager}</span>
+                  <span className="w-1 h-1 rounded-full bg-text-tertiary shrink-0" />
+                  <span className="truncate">{fundDetail.manager}</span>
                   {fundDetail.company && (
                     <>
-                      <span className="w-1 h-1 rounded-full bg-text-tertiary" />
-                      <span>{fundDetail.company}</span>
+                      <span className="w-1 h-1 rounded-full bg-text-tertiary shrink-0" />
+                      <span className="truncate">{fundDetail.company}</span>
                     </>
                   )}
                 </>
@@ -102,20 +105,21 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-white/10 active:bg-white/20 active:scale-90 flex items-center justify-center transition-all duration-150"
+            className="w-8 h-8 sm:w-8 sm:h-8 rounded-full hover:bg-white/10 active:bg-white/20 active:scale-90 flex items-center justify-center transition-all duration-150 shrink-0"
+            title="关闭"
           >
-            <i className="ri-close-line text-xl" />
+            <i className="ri-close-line text-xl text-text-primary" />
           </button>
         </header>
 
         {/* Tab Navigation */}
-        <nav className="flex items-center gap-1 px-6 border-b border-white/10 bg-black/20">
+        <nav className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-6 border-b border-white/10 bg-black/20 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={clsx(
-                'px-4 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-all duration-150 relative',
+                'px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-[11px] sm:text-sm font-medium flex items-center gap-1 sm:gap-2 border-b-2 transition-all duration-150 relative whitespace-nowrap shrink-0',
                 'active:scale-95',
                 activeTab === tab.id
                   ? tab.highlight
@@ -124,14 +128,14 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
                   : 'border-transparent text-text-secondary hover:text-text-primary active:bg-white/5'
               )}
             >
-              <i className={tab.icon} />
-              {tab.label}
+              <i className={clsx('text-xs sm:text-base', tab.icon)} />
+              <span>{tab.label}</span>
             </button>
           ))}
         </nav>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-scanline">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-scanline">
           {activeTab === 'overview' && (
             <FundOverview fundDetail={fundDetail} fund={fund} />
           )}
@@ -192,40 +196,40 @@ function FundOverview({ fundDetail, fund }: any) {
 
         {fundDetail ? (
           <>
-            <div className="glass-card p-4">
-              <div className="text-text-secondary text-sm mb-2">基金经理</div>
-              <div className="text-lg font-medium text-text-primary">
+            <div className="glass-card p-3 sm:p-4">
+              <div className="text-text-secondary text-xs sm:text-sm mb-1.5 sm:mb-2">基金经理</div>
+              <div className="text-base sm:text-lg font-medium text-text-primary truncate" title={fundDetail.manager || '--'}>
                 {fundDetail.manager || '--'}
               </div>
             </div>
 
-            <div className="glass-card p-4">
-              <div className="text-text-secondary text-sm mb-2">管理公司</div>
-              <div className="text-lg font-medium text-text-primary">
+            <div className="glass-card p-3 sm:p-4">
+              <div className="text-text-secondary text-xs sm:text-sm mb-1.5 sm:mb-2">管理公司</div>
+              <div className="text-base sm:text-lg font-medium text-text-primary truncate" title={fundDetail.company || '--'}>
                 {fundDetail.company || '--'}
               </div>
             </div>
 
-            <div className="glass-card p-4">
-              <div className="text-text-secondary text-sm mb-2">成立日期</div>
-              <div className="text-lg font-medium text-text-primary">
+            <div className="glass-card p-3 sm:p-4">
+              <div className="text-text-secondary text-xs sm:text-sm mb-1.5 sm:mb-2">成立日期</div>
+              <div className="text-base sm:text-lg font-medium text-text-primary">
                 {fundDetail.inceptionDate || '--'}
               </div>
             </div>
           </>
         ) : (
           <>
-            <div className="glass-card p-4 opacity-50">
-              <div className="text-text-secondary text-sm mb-2">基金经理</div>
-              <div className="text-lg font-medium text-text-primary">--</div>
+            <div className="glass-card p-3 sm:p-4 opacity-50">
+              <div className="text-text-secondary text-xs sm:text-sm mb-1.5 sm:mb-2">基金经理</div>
+              <div className="text-base sm:text-lg font-medium text-text-primary">--</div>
             </div>
-            <div className="glass-card p-4 opacity-50">
-              <div className="text-text-secondary text-sm mb-2">管理公司</div>
-              <div className="text-lg font-medium text-text-primary">--</div>
+            <div className="glass-card p-3 sm:p-4 opacity-50">
+              <div className="text-text-secondary text-xs sm:text-sm mb-1.5 sm:mb-2">管理公司</div>
+              <div className="text-base sm:text-lg font-medium text-text-primary">--</div>
             </div>
-            <div className="glass-card p-4 opacity-50">
-              <div className="text-text-secondary text-sm mb-2">成立日期</div>
-              <div className="text-lg font-medium text-text-primary">--</div>
+            <div className="glass-card p-3 sm:p-4 opacity-50">
+              <div className="text-text-secondary text-xs sm:text-sm mb-1.5 sm:mb-2">成立日期</div>
+              <div className="text-base sm:text-lg font-medium text-text-primary">--</div>
             </div>
           </>
         )}

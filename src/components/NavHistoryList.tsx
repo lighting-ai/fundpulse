@@ -72,29 +72,29 @@ export function NavHistoryList({ fundCode }: NavHistoryListProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* 表格 */}
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs sm:text-sm min-w-[600px]">
             <thead className="bg-black/30 border-b border-white/10">
               <tr>
-                <th className="px-4 py-3 text-left text-text-secondary font-medium text-xs uppercase tracking-wider">
+                <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-text-secondary font-medium text-[10px] sm:text-xs uppercase tracking-wider w-[90px] sm:w-[100px]">
                   日期
                 </th>
-                <th className="px-4 py-3 text-right text-text-secondary font-medium text-xs uppercase tracking-wider">
+                <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-right text-text-secondary font-medium text-[10px] sm:text-xs uppercase tracking-wider w-[80px] sm:w-[90px]">
                   单位净值
                 </th>
-                <th className="px-4 py-3 text-right text-text-secondary font-medium text-xs uppercase tracking-wider">
+                <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-right text-text-secondary font-medium text-[10px] sm:text-xs uppercase tracking-wider hidden sm:table-cell w-[90px]">
                   累计净值
                 </th>
-                <th className="px-4 py-3 text-right text-text-secondary font-medium text-xs uppercase tracking-wider">
+                <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-right text-text-secondary font-medium text-[10px] sm:text-xs uppercase tracking-wider w-[75px] sm:w-[85px]">
                   日增长率
                 </th>
-                <th className="px-4 py-3 text-center text-text-secondary font-medium text-xs uppercase tracking-wider">
+                <th className="px-1 sm:px-2 md:px-3 py-2 sm:py-3 text-center text-text-secondary font-medium text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider w-[60px] sm:w-[80px]">
                   申购状态
                 </th>
-                <th className="px-4 py-3 text-center text-text-secondary font-medium text-xs uppercase tracking-wider">
+                <th className="px-1 sm:px-2 md:px-3 py-2 sm:py-3 text-center text-text-secondary font-medium text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider w-[60px] sm:w-[80px]">
                   赎回状态
                 </th>
               </tr>
@@ -105,18 +105,18 @@ export function NavHistoryList({ fundCode }: NavHistoryListProps) {
                   key={`${item.date}-${index}`}
                   className="hover:bg-white/5 transition-colors"
                 >
-                  <td className="px-4 py-3 text-text-primary font-mono">
+                  <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-text-primary font-mono text-[10px] sm:text-xs whitespace-nowrap">
                     {item.date}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-text-primary">
+                  <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-right font-mono text-text-primary text-[10px] sm:text-xs whitespace-nowrap">
                     {item.nav > 0 ? item.nav.toFixed(4) : '--'}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-text-primary">
+                  <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-right font-mono text-text-primary text-[10px] sm:text-xs hidden sm:table-cell whitespace-nowrap">
                     {item.accNav > 0 ? item.accNav.toFixed(4) : '--'}
                   </td>
                   <td
                     className={clsx(
-                      'px-4 py-3 text-right font-mono',
+                      'px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-right font-mono text-[10px] sm:text-xs whitespace-nowrap',
                       item.dailyGrowth > 0
                         ? 'text-up'
                         : item.dailyGrowth < 0
@@ -133,11 +133,23 @@ export function NavHistoryList({ fundCode }: NavHistoryListProps) {
                       '--'
                     )}
                   </td>
-                  <td className="px-4 py-3 text-center text-text-secondary text-xs">
-                    {item.purchaseStatus || '--'}
+                  <td className="px-1 sm:px-2 md:px-3 py-2 sm:py-3 text-center text-text-secondary text-[9px] sm:text-[10px] md:text-xs whitespace-nowrap">
+                    {item.purchaseStatus ? (
+                      <span className="inline-block max-w-full truncate" title={item.purchaseStatus}>
+                        {item.purchaseStatus}
+                      </span>
+                    ) : (
+                      '--'
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-center text-text-secondary text-xs">
-                    {item.redemptionStatus || '--'}
+                  <td className="px-1 sm:px-2 md:px-3 py-2 sm:py-3 text-center text-text-secondary text-[9px] sm:text-[10px] md:text-xs whitespace-nowrap">
+                    {item.redemptionStatus ? (
+                      <span className="inline-block max-w-full truncate" title={item.redemptionStatus}>
+                        {item.redemptionStatus}
+                      </span>
+                    ) : (
+                      '--'
+                    )}
                   </td>
                 </tr>
               ))}
@@ -148,37 +160,39 @@ export function NavHistoryList({ fundCode }: NavHistoryListProps) {
 
       {/* 分页控件 */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className={clsx(
-              'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+              'px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150',
               'active:scale-95',
               currentPage === 1
                 ? 'bg-white/5 text-text-tertiary cursor-not-allowed'
                 : 'bg-white/10 text-text-primary hover:bg-white/15 active:bg-white/20'
             )}
           >
-            <i className="ri-arrow-left-line mr-1" />
-            上一页
+            <i className="ri-arrow-left-line mr-0.5 sm:mr-1" />
+            <span className="hidden sm:inline">上一页</span>
+            <span className="sm:hidden">上一页</span>
           </button>
-          <div className="text-sm text-text-secondary px-4">
-            第 {currentPage} / {totalPages} 页
+          <div className="text-xs sm:text-sm text-text-secondary px-2 sm:px-4">
+            {currentPage} / {totalPages}
           </div>
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className={clsx(
-              'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+              'px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150',
               'active:scale-95',
               currentPage === totalPages
                 ? 'bg-white/5 text-text-tertiary cursor-not-allowed'
                 : 'bg-white/10 text-text-primary hover:bg-white/15 active:bg-white/20'
             )}
           >
-            下一页
-            <i className="ri-arrow-right-line ml-1" />
+            <span className="hidden sm:inline">下一页</span>
+            <span className="sm:hidden">下一页</span>
+            <i className="ri-arrow-right-line ml-0.5 sm:ml-1" />
           </button>
         </div>
       )}
