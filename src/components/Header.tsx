@@ -7,7 +7,7 @@ import { SettingsModal } from './SettingsModal';
 
 export function Header() {
   const { updateRealtimeData } = useFundStore();
-  const { currentView, setCurrentView, triggerRankingRefresh } = useAppStore();
+  const { currentView, setCurrentView, triggerRankingRefresh, triggerSectorRefresh } = useAppStore();
   const { refreshIndices } = useIndexStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -16,8 +16,9 @@ export function Header() {
     setIsRefreshing(true);
     try {
       if (currentView === 'home') {
-        // 首页：刷新指数和排行榜
+        // 首页：刷新指数、排行榜和热门板块
         triggerRankingRefresh(); // 触发排行榜刷新（同步操作）
+        triggerSectorRefresh(); // 触发热门板块刷新（同步操作）
         await refreshIndices(); // 刷新指数数据
       } else {
         // 自选页：刷新自选列表

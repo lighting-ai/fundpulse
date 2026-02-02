@@ -94,63 +94,24 @@ const initRankDataSetter = () => {
 
         if (v && Array.isArray(v.datas) && v.datas.length > 0) {
           try {
-            // 调试：查看前几条原始数据，检查是否有标志位字段
-            if (v.datas.length > 0) {
-              const sampleRow = v.datas[0];
-              const sampleCols = sampleRow.split(',');
-              console.log('📊 返回数据字段数量:', sampleCols.length);
-              console.log('📊 前3条原始数据示例:', v.datas.slice(0, 3));
-              // 检查是否有可能是标志位的字段（通常在末尾）
-              if (sampleCols.length > 20) {
-                console.log('📊 可能的标志位字段（索引17-25）:', sampleCols.slice(17, 26));
-              }
-            }
-            
             // 解析数据
-            const funds: RankedFund[] = v.datas
-              .map((row: string) => {
-                const cols = row.split(',');
-                return {
-                  code: cols[FIELD_INDEX.code] || '',
-                  name: cols[FIELD_INDEX.name] || '',
-                  type: cols[FIELD_INDEX.type] || '混合型',
-                  nav: parseFloat(cols[FIELD_INDEX.nav]) || 0,
-                  accNav: parseFloat(cols[FIELD_INDEX.accNav]) || 0,
-                  dailyGrowth: parseFloat(cols[FIELD_INDEX.dailyGrowth]) || 0,
-                  recent1Week: parseFloat(cols[FIELD_INDEX.recent1Week]) || 0,
-                  recent1Month: parseFloat(cols[FIELD_INDEX.recent1Month]) || 0,
-                  recent3Month: parseFloat(cols[FIELD_INDEX.recent3Month]) || 0,
-                  recent1Year: parseFloat(cols[FIELD_INDEX.recent1Year]) || 0,
-                  thisYear: parseFloat(cols[FIELD_INDEX.thisYear]) || 0,
-                  manager: cols[FIELD_INDEX.manager] || '-'
-                };
-              })
-              .filter((fund: RankedFund) => {
-                // 过滤掉特殊类型的基金，与天天基金保持一致
-                const name = fund.name.trim();
-                
-                // 过滤掉名称以 "H" 结尾的基金（H类份额，通常不显示在排行榜）
-                // 匹配模式：以 H 结尾，或 H) 结尾，或 (H) 结尾
-                if (/H\)?$/.test(name) || /\(H\)$/.test(name)) {
-                  return false;
-                }
-                
-                // 过滤掉期货类基金（LOF期货基金通常不显示在普通排行榜）
-                // 匹配包含"期货"和"LOF"的基金
-                if (name.includes('期货') && (name.includes('LOF') || name.includes('LO'))) {
-                  return false;
-                }
-                
-                // 过滤掉其他特殊份额后缀（C、E、Y、D、I 等），但保留 A 类
-                // 匹配模式：以特殊字母结尾，且不是 A 类
-                const specialSuffixPattern = /[CEYDI]\)?$/;
-                if (specialSuffixPattern.test(name) && !name.includes('A')) {
-                  return false;
-                }
-                
-                return true;
-              });
-            
+            const funds: RankedFund[] = v.datas.map((row: string) => {
+              const cols = row.split(',');
+              return {
+                code: cols[FIELD_INDEX.code] || '',
+                name: cols[FIELD_INDEX.name] || '',
+                type: cols[FIELD_INDEX.type] || '混合型',
+                nav: parseFloat(cols[FIELD_INDEX.nav]) || 0,
+                accNav: parseFloat(cols[FIELD_INDEX.accNav]) || 0,
+                dailyGrowth: parseFloat(cols[FIELD_INDEX.dailyGrowth]) || 0,
+                recent1Week: parseFloat(cols[FIELD_INDEX.recent1Week]) || 0,
+                recent1Month: parseFloat(cols[FIELD_INDEX.recent1Month]) || 0,
+                recent3Month: parseFloat(cols[FIELD_INDEX.recent3Month]) || 0,
+                recent1Year: parseFloat(cols[FIELD_INDEX.recent1Year]) || 0,
+                thisYear: parseFloat(cols[FIELD_INDEX.thisYear]) || 0,
+                manager: cols[FIELD_INDEX.manager] || '-'
+              };
+            });
             console.log(`✅ 解析成功，数据条数: ${funds.length}`);
             request.resolve(funds);
           } catch (err) {
@@ -189,17 +150,38 @@ export const fetchFundRanking = (options: {
     pageSize = 50,
   } = options;
 
-  // 构建参数（简化版，参考用户测试代码）
+  // 计算日期范围（近1年）
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1);
+  
+  // 格式化日期为 YYYY-MM-DD
+  const formatDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // 构建参数（与天天基金保持一致）
   const params = new URLSearchParams({
     op: 'ph',
     dt: 'kf',
     ft: type,
+    rs: '', // 评级筛选，空表示不限
+    gs: '0', // 基金公司ID，0表示全部公司
     sc: sortBy,
     st: 'desc',
+    sd: formatDate(start), // 起始日期（1年前）
+    ed: formatDate(end), // 结束日期（今天）
+    qdii: type === 'zs' ? '|' : '', // QDII基金标记：指数型用 |，其他为空
+    tabSubtype: ',,,,,', // 子类型筛选，空值表示不过滤特殊类型
+    pi: '1', // 页码
     pn: pageSize.toString(),
+    dx: '1', // 未知参数，固定为1
   });
-  // 添加时间戳参数避免缓存
-  params.append('_', Date.now().toString());
+  // 添加版本号参数（避免缓存）
+  params.append('v', Math.random().toString());
 
   return new Promise((resolve, reject) => {
     // 初始化全局 setter（如果还没初始化）

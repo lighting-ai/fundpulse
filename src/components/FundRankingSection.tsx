@@ -52,7 +52,9 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
 
   useEffect(() => {
     loadRanking();
-  }, [loadRanking, refreshRankingTrigger]); // 监听刷新触发器
+    // 移除 loadRanking 依赖，避免重复调用
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.type, refreshRankingTrigger]); // 只监听 filters.type 和 refreshRankingTrigger
 
   const filteredFunds = funds.filter(fund => {
     if (!searchQuery) return true;

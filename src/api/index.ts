@@ -19,10 +19,10 @@ export const INDEX_CODES: Record<string, { code: string; name: string }> = {
   'SH000852': { code: 'sh000852', name: '中证1000' },
   'SH000688': { code: 'sh000688', name: '科创50' },
   'SZ399001': { code: 'sz399001', name: '深证成指' },
-  'SZ399005': { code: 'sz399005', name: '中小板指' },
+  'SZ399005': { code: 'sz399005', name: '中小100' },
   'SZ399006': { code: 'sz399006', name: '创业板指' },
   'SZ399002': { code: 'sz399002', name: '深成指R' },
-  'SZ399003': { code: 'sz399003', name: '深证100' },
+  'SZ399003': { code: 'sz399003', name: '成份Ｂ指' },
   // 港股指数
   'HSI': { code: 'hkHSI', name: '恒生指数' },
   'HSCEI': { code: 'hkHSCEI', name: '恒生国企' },

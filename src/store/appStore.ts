@@ -8,6 +8,9 @@ interface AppStore {
   // 刷新触发器：用于触发首页排行榜刷新
   refreshRankingTrigger: number;
   triggerRankingRefresh: () => void;
+  // 刷新触发器：用于触发热门板块刷新
+  refreshSectorTrigger: number;
+  triggerSectorRefresh: () => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -15,4 +18,6 @@ export const useAppStore = create<AppStore>((set) => ({
   setCurrentView: (view: ViewMode) => set({ currentView: view }),
   refreshRankingTrigger: 0,
   triggerRankingRefresh: () => set((state) => ({ refreshRankingTrigger: state.refreshRankingTrigger + 1 })),
+  refreshSectorTrigger: 0,
+  triggerSectorRefresh: () => set((state) => ({ refreshSectorTrigger: state.refreshSectorTrigger + 1 })),
 }));

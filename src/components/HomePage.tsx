@@ -3,6 +3,8 @@ import clsx from 'clsx';
 import { useFundStore } from '../store/fundStore';
 import { useAppStore } from '../store/appStore';
 import { IndexBar } from './IndexBar';
+import { IndexSection } from './IndexSection';
+import { SectorBoard } from './SectorBoard';
 import { FundModal } from './FundModal';
 import { FundRankingSection } from './FundRankingSection';
 import { validateFundCode } from '../api/eastmoney';
@@ -73,7 +75,7 @@ export function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-neon-red/10 via-transparent to-transparent blur-3xl" />
 
         <h1 className="text-6xl font-display font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-neon-red/80 relative z-10">
-          FundPulse <span className="text-neon-red">2.0</span>
+          FundPulse <span className="text-neon-red">2.0.1</span>
         </h1>
         <p className="mt-4 text-xl text-text-secondary font-light tracking-wide relative z-10">
           实时透视 · 智能洞察 · 穿透持仓
@@ -140,27 +142,23 @@ export function HomePage() {
         </button>
       </div>
 
-      {/* 双列市场概览 */}
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 p-6 max-w-[1920px] mx-auto">
-        {/* 左列：全球指数流 */}
-        <section className="glass-card p-4 h-[800px] overflow-hidden flex flex-col">
-          <header className="flex items-center gap-2 mb-4 text-text-secondary flex-shrink-0">
-            <i className="ri-globe-line text-neon-blue text-2xl" />
-            <h3 className="font-display font-semibold text-xl">全球指数流</h3>
-            <span className="ml-auto flex items-center gap-2 text-xs">
-              <span className="live-dot" /> 实时
-            </span>
-          </header>
+      {/* v2.0.1 布局：指数条 + 双列（板块+基金） */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 space-y-4">
+        {/* 1. 指数条（非全宽，与下方同宽） */}
+        <IndexSection />
 
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            <IndexBar />
-          </div>
-        </section>
+        {/* 2. 双列内容区（板块 + 基金） */}
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
+          {/* 左列：热门板块榜 */}
+          <section className="glass-card p-4 h-[600px] overflow-hidden flex flex-col">
+            <SectorBoard />
+          </section>
 
-        {/* 右列：热门基金排行榜 */}
-        <section className="glass-card p-4 h-[800px] overflow-hidden flex flex-col">
-          <FundRankingSection onFundClick={handleFundClick} />
-        </section>
+          {/* 右列：热门基金排行榜 */}
+          <section className="glass-card p-4 h-[600px] overflow-hidden flex flex-col">
+            <FundRankingSection onFundClick={handleFundClick} />
+          </section>
+        </div>
       </div>
 
       {/* 基金详情弹窗 */}

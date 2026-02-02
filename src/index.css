@@ -364,6 +364,112 @@ body::before {
   color: var(--down);
 }
 
+/* ========== v2.0.1 数字翻牌动画系统 ========== */
+
+/* 基础翻牌容器 */
+.flip-number-container {
+  display: inline-flex;
+  perspective: 1000px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* 单个数字位 */
+.flip-digit {
+  position: relative;
+  width: 0.6em;
+  height: 1.2em;
+  line-height: 1.2em;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* 翻牌动画关键帧 */
+@keyframes flip-up {
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: rotateX(-90deg);
+    opacity: 0.3;
+  }
+  100% {
+    transform: rotateX(-180deg);
+    opacity: 1;
+  }
+}
+
+@keyframes flip-down {
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: rotateX(90deg);
+    opacity: 0.3;
+  }
+  100% {
+    transform: rotateX(180deg);
+    opacity: 1;
+  }
+}
+
+/* 涨跌颜色渐变动画 */
+@keyframes glow-pulse-red {
+  0%,
+  100% {
+    text-shadow: 0 0 5px rgba(255, 69, 58, 0.5);
+    color: #ff453a;
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(255, 69, 58, 0.9), 0 0 40px rgba(255, 69, 58, 0.4);
+    color: #ff6b6b;
+  }
+}
+
+@keyframes glow-pulse-green {
+  0%,
+  100% {
+    text-shadow: 0 0 5px rgba(50, 215, 75, 0.5);
+    color: #32d74b;
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(50, 215, 75, 0.9), 0 0 40px rgba(50, 215, 75, 0.4);
+    color: #4ade80;
+  }
+}
+
+/* 数字更新时的翻牌效果类 */
+.number-flip-up {
+  animation: flip-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.number-flip-down {
+  animation: flip-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 涨跌状态样式 */
+.trend-up {
+  animation: glow-pulse-red 2s ease-in-out infinite;
+  color: var(--up);
+}
+
+.trend-down {
+  animation: glow-pulse-green 2s ease-in-out infinite;
+  color: var(--down);
+}
+
+/* 隐藏滚动条但保持滚动功能 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* 按钮点击效果 - 全局样式 */
 button {
   position: relative;
