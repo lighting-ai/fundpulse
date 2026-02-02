@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { fetchFundNavHistoryList, NavHistoryListItem } from '../api/eastmoney';
-import { useDetailStore } from '../store/detailStore';
 
 interface NavHistoryListProps {
   fundCode: string;

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { useFundStore } from '../store/fundStore';
 import { useAppStore } from '../store/appStore';
-import { IndexBar } from './IndexBar';
 import { IndexSection } from './IndexSection';
 import { SectorBoard } from './SectorBoard';
 import { FundModal } from './FundModal';

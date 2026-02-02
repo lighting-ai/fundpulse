@@ -427,7 +427,8 @@ const parseFundBasicInfoFromHTML = (html: string): {
  * 注意：此接口不稳定，已移除使用，仅保留代码作为参考
  * @deprecated 已改用 pingzhongdata 接口
  */
-// @ts-expect-error - 保留代码作为参考，但不再使用
+// @ts-ignore - 保留代码作为参考，但不再使用
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const fetchFundBasicInfoFromJBGK = async (
   fundCode: string
 ): Promise<{

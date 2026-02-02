@@ -29,7 +29,7 @@ export interface TencentIndexData {
  */
 const getPredefinedName = (tencentCodeOrIndexCode: string, fallbackName: string, indexCode?: string): string => {
   // 方法1: 直接匹配腾讯代码（如 sh000001）
-  for (const [key, value] of Object.entries(INDEX_CODES)) {
+  for (const [, value] of Object.entries(INDEX_CODES)) {
     if (value.code === tencentCodeOrIndexCode) {
       return value.name;
     }
@@ -109,6 +109,7 @@ const getPredefinedName = (tencentCodeOrIndexCode: string, fallbackName: string,
   if (fallbackName && 
       !fallbackName.includes('�') && 
       !fallbackName.includes('?') &&
+      // eslint-disable-next-line no-control-regex
       !/^[\x00-\x7F]+$/.test(fallbackName)) { // 不是纯ASCII（可能是乱码）
     // 检查是否包含中文字符
     if (/[\u4e00-\u9fa5]/.test(fallbackName)) {
@@ -191,6 +192,7 @@ const parseIndexLine = (line: string): TencentIndexData | null => {
     for (let i = 25; i < Math.min(35, fields.length); i++) {
       const val = fields[i];
       // 识别时间格式：A股(20260202130357)、港股(2026/02/02 11:59:59)、美股(2026-01-30 17:15:59)
+      // eslint-disable-next-line no-useless-escape
       if (val && (/\d{4}[\/\-]?\d{2}[\/\-]?\d{2}/.test(val) || /^\d{14}$/.test(val))) {
         updateTime = val;
         break;

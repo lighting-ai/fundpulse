@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { useFundStore } from '../store/fundStore';
 import { FundModal } from './FundModal';
@@ -7,11 +7,6 @@ import { validateFundCode, fetchFundRealtime } from '../api/eastmoney';
 export function PortfolioPage() {
   const { watchlist, selectedFundCode, selectFund, removeFund, updateUserHolding, updateRealtimeData, addFund } = useFundStore();
   const [showFundModal, setShowFundModal] = useState(false);
-  const [editingFundCode, setEditingFundCode] = useState<string | null>(null);
-  const [editingAmount, setEditingAmount] = useState<string>('');
-  const [isSaving, setIsSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const saveButtonRef = useRef<HTMLButtonElement>(null);
   
   // 添加基金相关状态
   const [showAddModal, setShowAddModal] = useState(false);
@@ -63,36 +58,6 @@ export function PortfolioPage() {
 
     return () => clearInterval(interval);
   }, [updateRealtimeData]);
-
-  // 处理持仓金额输入
-  const handleAmountInput = (fundCode: string, currentAmount: number) => {
-    setEditingFundCode(fundCode);
-    setEditingAmount(currentAmount > 0 ? currentAmount.toString() : '');
-    // 聚焦输入框
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
-  };
-
-  // 保存持仓金额
-  const handleSaveAmount = async (fundCode: string) => {
-    if (isSaving) return;
-    setIsSaving(true);
-    try {
-      const amount = parseFloat(editingAmount) || 0;
-      await updateUserHolding(fundCode, amount);
-      setEditingFundCode(null);
-      setEditingAmount('');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // 取消编辑
-  const handleCancelEdit = () => {
-    setEditingFundCode(null);
-    setEditingAmount('');
-  };
 
   const handleFundClick = (code: string) => {
     selectFund(code);

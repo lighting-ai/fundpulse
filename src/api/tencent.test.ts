@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTencentIndex, TencentIndexData } from './tencent';
+import { parseTencentIndex } from './tencent';
 
 describe('parseTencentIndex', () => {
   // 使用用户提供的完整实际数据（包含沪深、港股、美股）
@@ -21,6 +21,7 @@ describe('parseTencentIndex', () => {
       console.log(`  最低: ${index.low}`);
       console.log(`  PE: ${index.pe}`);
       console.log(`  名称是否包含中文: ${/[\u4e00-\u9fa5]/.test(index.name)}`);
+      // eslint-disable-next-line no-control-regex
       console.log(`  名称是否乱码: ${index.name.includes('�') || index.name.includes('?') || (/^[\x00-\x7F]+$/.test(index.name) && index.name !== index.code && !index.name.match(/^[A-Z]+$/))}`);
     });
     console.log('\n==========================================\n');
