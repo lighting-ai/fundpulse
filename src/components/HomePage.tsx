@@ -70,19 +70,19 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-void bg-scanline pt-20">
       {/* Hero Section */}
-      <div className="relative h-[40vh] flex flex-col items-center justify-center">
+      <div className="relative h-[30vh] sm:h-[35vh] md:h-[40vh] flex flex-col items-center justify-center px-4">
         {/* 背景光晕 */}
         <div className="absolute inset-0 bg-gradient-to-b from-neon-red/10 via-transparent to-transparent blur-3xl" />
 
-        <h1 className="text-6xl font-display font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-neon-red/80 relative z-10">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-neon-red/80 relative z-10">
           FundPulse <span className="text-neon-red">2.0.1</span>
         </h1>
-        <p className="mt-4 text-xl text-text-secondary font-light tracking-wide relative z-10">
+        <p className="mt-2 sm:mt-3 md:mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-text-secondary font-light tracking-wide relative z-10">
           实时透视 · 智能洞察 · 穿透持仓
         </p>
 
         {/* 全局搜索框 */}
-        <div className="mt-8 w-full max-w-md relative z-10">
+        <div className="mt-4 sm:mt-6 md:mt-8 w-full max-w-md relative z-10">
           <div className="relative">
             <input
               type="text"
@@ -143,19 +143,19 @@ export function HomePage() {
       </div>
 
       {/* v2.0.1 布局：指数条 + 双列（板块+基金） */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 space-y-4">
+      <div className="max-w-[1400px] mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 space-y-2 sm:space-y-3 md:space-y-4">
         {/* 1. 指数条（非全宽，与下方同宽） */}
         <IndexSection />
 
         {/* 2. 双列内容区（板块 + 基金） */}
-        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[360px_1fr] gap-2 sm:gap-3 md:gap-4">
           {/* 左列：热门板块榜 */}
-          <section className="glass-card p-4 h-[600px] overflow-hidden flex flex-col">
+          <section className="glass-card p-2 sm:p-3 md:p-4 h-[400px] sm:h-[500px] md:h-[550px] lg:h-[600px] overflow-hidden flex flex-col">
             <SectorBoard />
           </section>
 
           {/* 右列：热门基金排行榜 */}
-          <section className="glass-card p-4 h-[600px] overflow-hidden flex flex-col">
+          <section className="glass-card p-2 sm:p-3 md:p-4 h-[400px] sm:h-[500px] md:h-[550px] lg:h-[600px] overflow-hidden flex flex-col">
             <FundRankingSection onFundClick={handleFundClick} />
           </section>
         </div>

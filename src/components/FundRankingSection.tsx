@@ -145,29 +145,29 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div className="flex items-center gap-2 text-text-secondary">
-          <i className="ri-fire-line text-neon-red text-2xl" />
-          <h3 className="font-display font-semibold text-xl">热门基金排行榜</h3>
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-2 sm:mb-3 md:mb-4 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 text-text-secondary">
+          <i className="ri-fire-line text-neon-red text-lg sm:text-xl md:text-2xl" />
+          <h3 className="font-display font-semibold text-sm sm:text-base md:text-lg lg:text-xl">热门基金排行榜</h3>
         </div>
 
         {/* 搜索栏 */}
-        <div className="relative w-72">
+        <div className="relative w-full sm:w-48 md:w-56 lg:w-72">
           <input
             type="text"
             placeholder="搜索基金代码/名称..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/30 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm focus:border-neon-blue focus:outline-none focus:shadow-[0_0_15px_rgba(0,212,255,0.3)] transition-all"
+            className="w-full bg-black/30 border border-white/10 rounded-lg pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-neon-blue focus:outline-none focus:shadow-[0_0_15px_rgba(0,212,255,0.3)] transition-all"
           />
-          <i className="ri-search-line absolute left-3 top-2.5 text-text-tertiary" />
+          <i className="ri-search-line absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm sm:text-base" />
         </div>
       </header>
 
       {/* 筛选栏 */}
-      <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-white/10 flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3 mb-2 sm:mb-3 md:mb-4 pb-2 sm:pb-3 md:pb-4 border-b border-white/10 flex-shrink-0">
         {/* 基金类型 */}
-        <div className="flex items-center gap-1 bg-black/20 rounded-lg p-1">
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-black/20 rounded-lg p-0.5 sm:p-1 overflow-x-auto scrollbar-hide">
           {[
             { id: "all", label: "全部" },
             { id: "gp", label: "股票型" },
@@ -179,7 +179,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
               key={type.id}
               onClick={() => setFilters({ ...filters, type: type.id as any })}
               className={clsx(
-                'px-3 py-1 rounded text-xs font-medium transition-all duration-150',
+                'px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-150 whitespace-nowrap',
                 filters.type === type.id
                   ? 'bg-neon-red/20 text-neon-red active:bg-neon-red/30 active:scale-95'
                   : 'text-text-secondary hover:text-white active:bg-white/10 active:scale-95'
@@ -196,23 +196,23 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
       {/* 列表 - 固定高度，可滚动 */}
       <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-text-tertiary">加载中...</div>
+          <div className="flex items-center justify-center py-8 sm:py-10 md:py-12">
+            <div className="text-text-tertiary text-xs sm:text-sm">加载中...</div>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm min-w-[1000px]">
-              <thead className="text-xs text-text-tertiary uppercase tracking-wider sticky top-0 bg-surface/80 backdrop-blur border-b border-white/5">
+            <table className="w-full text-left text-[10px] sm:text-xs md:text-sm min-w-[800px] sm:min-w-[900px] md:min-w-[1000px]">
+              <thead className="text-[9px] sm:text-[10px] md:text-xs text-text-tertiary uppercase tracking-wider sticky top-0 bg-surface/80 backdrop-blur border-b border-white/5">
                 <tr>
-                  <th className="py-2 pl-2">基金名称</th>
-                  <th className="py-2 text-right">单位净值</th>
-                  <th className="py-2 text-right">累计净值</th>
-                  <th className="py-2 text-right">日增长率</th>
-                  <th className="py-2 text-right">近1周</th>
-                  <th className="py-2 text-right">近1月</th>
-                  <th className="py-2 text-right">近3月</th>
-                  <th className="py-2 text-right">今年来</th>
-                  <th className="py-2 text-center">操作</th>
+                  <th className="py-1.5 sm:py-2 pl-1 sm:pl-2">基金名称</th>
+                  <th className="py-1.5 sm:py-2 text-right">单位净值</th>
+                  <th className="py-1.5 sm:py-2 text-right hidden sm:table-cell">累计净值</th>
+                  <th className="py-1.5 sm:py-2 text-right">日增长率</th>
+                  <th className="py-1.5 sm:py-2 text-right hidden md:table-cell">近1周</th>
+                  <th className="py-1.5 sm:py-2 text-right hidden md:table-cell">近1月</th>
+                  <th className="py-1.5 sm:py-2 text-right hidden lg:table-cell">近3月</th>
+                  <th className="py-1.5 sm:py-2 text-right hidden lg:table-cell">今年来</th>
+                  <th className="py-1.5 sm:py-2 text-center">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -222,20 +222,20 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                     className="group hover:bg-white/5 transition-colors"
                   >
                     <td
-                      className="py-3 pl-2 cursor-pointer"
+                      className="py-2 sm:py-2.5 md:py-3 pl-1 sm:pl-2 cursor-pointer"
                       onClick={() => onFundClick(fund.code)}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-text-tertiary w-5">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="text-[9px] sm:text-[10px] md:text-xs text-text-tertiary w-4 sm:w-5">
                           {idx + 1}
                         </span>
                         <div>
-                          <div className="font-medium text-text-primary truncate max-w-[150px]">
+                          <div className="font-medium text-text-primary truncate max-w-[100px] sm:max-w-[120px] md:max-w-[150px] text-[10px] sm:text-xs md:text-sm">
                             {fund.name}
                           </div>
-                          <div className="text-xs text-text-tertiary flex items-center gap-2">
+                          <div className="text-[9px] sm:text-[10px] md:text-xs text-text-tertiary flex items-center gap-1 sm:gap-2">
                             {fund.code}
-                            <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px]">
+                            <span className="px-1 sm:px-1.5 py-0.5 rounded bg-white/5 text-[8px] sm:text-[9px] md:text-[10px]">
                               {fund.type}
                             </span>
                           </div>
@@ -243,20 +243,20 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                       </div>
                     </td>
                     <td className={clsx(
-                      'py-3 text-right font-mono',
+                      'py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-right font-mono text-[9px] sm:text-[10px] md:text-xs',
                       fund.dailyGrowth >= 0 ? 'text-up' : fund.dailyGrowth < 0 ? 'text-down' : 'text-text-primary'
                     )}>
                       {fund.nav > 0 ? fund.nav.toFixed(4) : '--'}
                     </td>
                     <td className={clsx(
-                      'py-3 text-right font-mono',
+                      'py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-right font-mono text-[9px] sm:text-[10px] md:text-xs hidden sm:table-cell',
                       fund.dailyGrowth >= 0 ? 'text-up' : fund.dailyGrowth < 0 ? 'text-down' : 'text-text-primary'
                     )}>
                       {fund.accNav > 0 ? fund.accNav.toFixed(4) : '--'}
                     </td>
                     <td
                       className={clsx(
-                        'py-3 text-right font-mono',
+                        'py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-right font-mono text-[9px] sm:text-[10px] md:text-xs',
                         fund.dailyGrowth >= 0 ? 'text-up' : 'text-down'
                       )}
                     >
@@ -271,7 +271,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                     </td>
                     <td
                       className={clsx(
-                        'py-3 text-right font-mono',
+                        'py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-right font-mono text-[9px] sm:text-[10px] md:text-xs hidden md:table-cell',
                         fund.recent1Week >= 0 ? 'text-up' : 'text-down'
                       )}
                     >
@@ -286,7 +286,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                     </td>
                     <td
                       className={clsx(
-                        'py-3 text-right font-mono',
+                        'py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-right font-mono text-[9px] sm:text-[10px] md:text-xs hidden md:table-cell',
                         fund.recent1Month >= 0 ? 'text-up' : 'text-down'
                       )}
                     >
@@ -301,7 +301,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                     </td>
                     <td
                       className={clsx(
-                        'py-3 text-right font-mono',
+                        'py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-right font-mono text-[9px] sm:text-[10px] md:text-xs hidden lg:table-cell',
                         fund.recent3Month >= 0 ? 'text-up' : 'text-down'
                       )}
                     >
@@ -316,7 +316,7 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                     </td>
                     <td
                       className={clsx(
-                        'py-3 text-right font-mono',
+                        'py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-right font-mono text-[9px] sm:text-[10px] md:text-xs hidden lg:table-cell',
                         fund.thisYear >= 0 ? 'text-up' : 'text-down'
                       )}
                     >
@@ -329,27 +329,27 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                         '--'
                       )}
                     </td>
-                    <td className="py-3 text-center">
-                      <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="py-1.5 sm:py-2 md:py-2.5 lg:py-3 text-center">
+                      <div className="flex items-center justify-center gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddToWatchlist(fund);
                           }}
-                          className="p-1.5 rounded-lg bg-neon-blue/10 text-neon-blue hover:bg-neon-blue/20 active:bg-neon-blue/30 active:scale-95 transition-all duration-150"
+                          className="p-1 sm:p-1.5 rounded-lg bg-neon-blue/10 text-neon-blue hover:bg-neon-blue/20 active:bg-neon-blue/30 active:scale-95 transition-all duration-150"
                           title="加入自选"
                         >
-                          <i className="ri-add-line" />
+                          <i className="ri-add-line text-xs sm:text-sm" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             onFundClick(fund.code);
                           }}
-                          className="p-1.5 rounded-lg bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 active:bg-neon-purple/30 active:scale-95 transition-all duration-150"
+                          className="p-1 sm:p-1.5 rounded-lg bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 active:bg-neon-purple/30 active:scale-95 transition-all duration-150"
                           title="AI诊断"
                         >
-                          <i className="ri-robot-2-line" />
+                          <i className="ri-robot-2-line text-xs sm:text-sm" />
                         </button>
                       </div>
                     </td>

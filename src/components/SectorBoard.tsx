@@ -63,12 +63,12 @@ export function SectorBoard() {
   };
 
   return (
-    <div className="w-full h-full rounded-2xl bg-[#0a0514]/60 backdrop-blur-xl border border-purple-500/20 overflow-hidden shadow-[0_0_40px_rgba(139,92,246,0.1)] flex flex-col">
+    <div className="w-full h-full rounded-xl sm:rounded-xl md:rounded-2xl bg-[#0a0514]/60 backdrop-blur-xl border border-purple-500/20 overflow-hidden shadow-[0_0_40px_rgba(139,92,246,0.1)] flex flex-col">
       {/* Header - 紫调风格 */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-purple-500/20 bg-purple-950/30 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <i className="ri-bar-chart-grouped-fill text-cyan-400 text-lg drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
-          <h3 className="text-sm font-semibold text-purple-100 tracking-wide">
+      <div className="flex items-center justify-between px-2 sm:px-3 md:px-4 lg:px-5 py-2 sm:py-2.5 md:py-3 lg:py-4 border-b border-purple-500/20 bg-purple-950/30 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+          <i className="ri-bar-chart-grouped-fill text-cyan-400 text-sm sm:text-base md:text-lg drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+          <h3 className="text-[10px] sm:text-xs md:text-sm font-semibold text-purple-100 tracking-wide">
             热门板块
           </h3>
         </div>
@@ -77,24 +77,24 @@ export function SectorBoard() {
           <button
             onClick={() => setActiveTab('up')}
             className={clsx(
-              'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              'px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1 sm:py-1.5 rounded-md text-[9px] sm:text-[10px] md:text-xs font-medium transition-all',
               activeTab === 'up'
                 ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30 shadow-[0_0_10px_rgba(255,45,85,0.2)]'
                 : 'text-purple-300/60 hover:text-purple-200'
             )}
           >
-            强势板块
+            强势
           </button>
           <button
             onClick={() => setActiveTab('down')}
             className={clsx(
-              'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              'px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1 sm:py-1.5 rounded-md text-[9px] sm:text-[10px] md:text-xs font-medium transition-all',
               activeTab === 'down'
                 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_10px_rgba(34,211,238,0.2)]'
                 : 'text-purple-300/60 hover:text-purple-200'
             )}
           >
-            调整板块
+            调整
           </button>
         </div>
       </div>
@@ -125,18 +125,18 @@ export function SectorBoard() {
                 <div
                   key={sector.code}
                   className={clsx(
-                    'group flex items-center justify-between px-5 py-3.5',
+                    'group flex items-center justify-between px-2 sm:px-3 md:px-4 lg:px-5 py-2 sm:py-2.5 md:py-3 lg:py-3.5',
                     'transition-all duration-300 cursor-pointer',
                     'hover:bg-purple-500/10',
                     getHeatStyle(sector.changePercent)
                   )}
                 >
                   {/* 左侧：排名 + 板块信息 */}
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1 min-w-0">
                     {/* 排名 - 紫调风格 */}
                     <div
                       className={clsx(
-                        'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold font-mono',
+                        'w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded sm:rounded-md md:rounded-lg flex items-center justify-center text-[8px] sm:text-[9px] md:text-[10px] font-bold font-mono shrink-0',
                         isTopRank
                           ? isUp
                             ? 'bg-pink-500/20 text-pink-400 border border-pink-500/40'
@@ -148,14 +148,14 @@ export function SectorBoard() {
                     </div>
 
                     <div className="flex flex-col min-w-0">
-                      <div className="text-[15px] font-medium text-purple-50 truncate group-hover:text-white transition-colors">
+                      <div className="text-[11px] sm:text-[12px] md:text-[13px] lg:text-[15px] font-medium text-purple-50 truncate group-hover:text-white transition-colors">
                         {sector.name.replace('行业', '').replace('板块', '')}
                       </div>
 
                       {sector.leadingStock && (
-                        <div className="flex items-center gap-1.5 text-[11px] mt-0.5">
+                        <div className="flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] md:text-[11px] mt-0.5">
                           <span className="text-purple-400/60">▸</span>
-                          <span className="text-purple-300/70 truncate max-w-[80px]">
+                          <span className="text-purple-300/70 truncate max-w-[60px] sm:max-w-[70px] md:max-w-[80px]">
                             {sector.leadingStock.name}
                           </span>
                           {sector.leadingStock.changePercent !== 0 && (
@@ -171,11 +171,11 @@ export function SectorBoard() {
 
                   {/* 中间：价格信息 */}
                   {sector.latestPrice !== undefined && sector.changeAmount !== undefined && (
-                    <div className="flex flex-col items-end mr-4 text-xs tabular-nums">
+                    <div className="flex flex-col items-end mr-2 sm:mr-3 md:mr-4 text-[9px] sm:text-[10px] md:text-xs tabular-nums shrink-0">
                       <div className="text-purple-200/80 font-mono">
                         {sector.latestPrice.toFixed(2)}
                       </div>
-                      <div className={clsx('font-mono text-[11px]', isUp ? 'text-red-400/70' : 'text-green-400/70')}>
+                      <div className={clsx('font-mono text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px]', isUp ? 'text-red-400/70' : 'text-green-400/70')}>
                         {isUp ? '+' : ''}
                         {sector.changeAmount.toFixed(2)}
                       </div>
@@ -185,7 +185,7 @@ export function SectorBoard() {
                   {/* 右侧：涨跌幅 - 霓虹大字 */}
                   <div
                     className={clsx(
-                      'text-[18px] font-bold font-mono tracking-tight tabular-nums w-[80px] text-right',
+                      'text-[12px] sm:text-[14px] md:text-[16px] lg:text-[18px] font-bold font-mono tracking-tight tabular-nums w-[50px] sm:w-[60px] md:w-[70px] lg:w-[80px] text-right shrink-0',
                       isUp
                         ? 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.4)]'
                         : 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.4)]'

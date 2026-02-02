@@ -63,52 +63,51 @@ function IndexCard({
   const isUp = change >= 0;
 
   return (
-    <div className="relative flex-shrink-0 w-[200px] h-[140px] p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm hover:border-white/20 transition-all group overflow-hidden flex flex-col">
+    <div className="relative flex-shrink-0 w-[100px] h-[70px] sm:w-[120px] sm:h-[84px] md:w-[140px] md:h-[98px] lg:w-[160px] lg:h-[112px] xl:w-[200px] xl:h-[140px] p-2 sm:p-2.5 md:p-3 lg:p-3.5 xl:p-4 rounded-xl sm:rounded-xl md:rounded-xl lg:rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm hover:border-white/20 transition-all group overflow-hidden flex flex-col">
       {/* 顶部行：名称（左） + PE（右） */}
       <div className="flex items-start justify-between flex-shrink-0">
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-text-primary tracking-wide truncate">
+          <div className="text-[10px] sm:text-[11px] md:text-xs lg:text-sm font-medium text-text-primary tracking-wide truncate">
             {name || code}
           </div>
-          <div className="text-[11px] text-text-tertiary font-mono mt-0.5 tracking-wider opacity-70">
+          <div className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] text-text-tertiary font-mono mt-0.5 tracking-wider opacity-70">
             {code}
           </div>
         </div>
 
         {/* PE 放右上角，弱化显示（灰色小字） */}
-        {/* 如果没有PE或PE为0，不显示 */}
         {pe > 0 ? (
-          <div className="text-[11px] text-text-tertiary font-mono flex items-center gap-0.5 opacity-60">
-            <span className="text-[10px]">PE</span>
+          <div className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] text-text-tertiary font-mono flex items-center gap-0.5 opacity-60">
+            <span className="text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px]">PE</span>
             <span>{pe.toFixed(1)}</span>
           </div>
         ) : null}
       </div>
 
       {/* 中部：最新价（绝对主角，垂直居中） */}
-      <div className="flex-1 flex items-center justify-center my-1">
-        <div className="text-[32px] font-mono font-bold text-white tracking-tighter tabular-nums leading-none group-hover:scale-[1.02] transition-transform">
+      <div className="flex-1 flex items-center justify-center my-0.5 sm:my-1">
+        <div className="text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px] xl:text-[32px] font-mono font-bold text-white tracking-tighter tabular-nums leading-none group-hover:scale-[1.02] transition-transform">
           <FlipNumber value={price} decimals={2} />
         </div>
       </div>
 
       {/* 底部行：涨跌额（左） + 涨跌幅（右 pill） */}
-      <div className="flex items-center justify-between pt-2 border-t border-white/5 mt-auto flex-shrink-0">
+      <div className="flex items-center justify-between pt-1 sm:pt-1.5 md:pt-2 border-t border-white/5 mt-auto flex-shrink-0">
         {/* 涨跌额：符号 ↑↓ 直接暗示含义 */}
         <div
           className={clsx(
-            'flex items-center gap-0.5 text-sm font-mono font-medium',
+            'flex items-center gap-0.5 text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-mono font-medium',
             isUp ? 'text-red-400' : 'text-green-400'
           )}
         >
-          <span className="text-xs opacity-80">{isUp ? '↑' : '↓'}</span>
+          <span className="text-[7px] sm:text-[8px] md:text-xs opacity-80">{isUp ? '↑' : '↓'}</span>
           <FlipNumber value={Math.abs(change)} decimals={2} />
         </div>
 
         {/* 涨跌幅：红绿pill，最显眼的颜色标识 */}
         <div
           className={clsx(
-            'px-2 py-0.5 rounded-md text-xs font-bold font-mono',
+            'px-1 sm:px-1.5 md:px-2 py-0.5 rounded text-[8px] sm:text-[9px] md:text-xs font-bold font-mono',
             isUp
               ? 'bg-red-500/20 text-red-400 border border-red-500/30'
               : 'bg-green-500/20 text-green-400 border border-green-500/30'
@@ -122,7 +121,7 @@ function IndexCard({
       {/* 背景光晕（根据涨跌） */}
       <div
         className={clsx(
-          'absolute -bottom-6 -right-6 w-28 h-28 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none',
+          'absolute -bottom-3 sm:-bottom-4 md:-bottom-5 lg:-bottom-6 -right-3 sm:-right-4 md:-right-5 lg:-right-6 w-14 sm:w-16 md:w-20 lg:w-24 xl:w-28 h-14 sm:h-16 md:h-20 lg:h-24 xl:h-28 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none',
           isUp ? 'bg-red-500' : 'bg-green-500'
         )}
       />
@@ -327,16 +326,16 @@ export function IndexSection() {
   };
 
   return (
-    <div className="glass-card p-4">
+    <div className="glass-card p-2 sm:p-3 md:p-4">
       {/* 分类 Tab */}
-      <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
-        <div className="flex bg-black/30 rounded-lg p-1">
+      <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3 md:mb-4 border-b border-white/10 pb-2 sm:pb-2.5 md:pb-3">
+        <div className="flex bg-black/30 rounded-lg p-0.5 sm:p-1 overflow-x-auto scrollbar-hide">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={clsx(
-                'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
+                'px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap',
                 activeCategory === cat.id
                   ? 'bg-white/10 text-white shadow-[0_0_15px_rgba(255,45,85,0.3)]'
                   : 'text-text-secondary hover:text-white'
@@ -346,28 +345,28 @@ export function IndexSection() {
             </button>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-2 text-xs text-text-tertiary">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          实时更新
+        <div className="ml-auto flex items-center gap-1 sm:gap-2 text-[9px] sm:text-[10px] md:text-xs text-text-tertiary shrink-0">
+          <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="hidden sm:inline">实时更新</span>
         </div>
       </div>
 
       {/* 横向滚动指数 */}
       <div className="relative">
         {isLoading && indices.length === 0 ? (
-          <div className="flex items-center justify-center py-8">
-            <i className="ri-loader-4-line animate-spin text-text-tertiary mr-2" />
-            <span className="text-text-tertiary">加载中...</span>
+          <div className="flex items-center justify-center py-4 sm:py-6 md:py-8">
+            <i className="ri-loader-4-line animate-spin text-text-tertiary mr-2 text-sm sm:text-base" />
+            <span className="text-text-tertiary text-xs sm:text-sm">加载中...</span>
           </div>
         ) : indices.length === 0 ? (
-          <div className="text-center py-8 text-text-tertiary text-sm">
+          <div className="text-center py-4 sm:py-6 md:py-8 text-text-tertiary text-xs sm:text-sm">
             暂无数据
           </div>
         ) : (
           <div
             ref={containerRef}
             className={clsx(
-              'flex gap-3 pb-1',
+              'flex gap-1.5 sm:gap-2 md:gap-3 pb-1',
               shouldScroll
                 ? 'overflow-x-auto scrollbar-hide cursor-grab'
                 : 'overflow-hidden justify-center items-center',
