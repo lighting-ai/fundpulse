@@ -1596,7 +1596,8 @@ export const searchFunds = async (keyword: string): Promise<FundSearchResult[]> 
                   name: fundInfo.SHORTNAME || item.NAME || '',
                   shortName: fundInfo.SHORTNAME,
                   nav: fundInfo.DWJZ ? parseFloat(fundInfo.DWJZ) : undefined,
-                  fundType: fundInfo.FTYPE || '',
+                  fundType: fundInfo.FTYPE || '', // FTYPE，如"混合型-偏股"
+                  fundTypeCode: fundInfo.FUNDTYPE || '', // FUNDTYPE，如"002"
                   company: fundInfo.JJGS || '',
                 };
               });

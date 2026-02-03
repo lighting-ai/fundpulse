@@ -18,11 +18,9 @@ export function HomePage() {
   const [searchError, setSearchError] = useState('');
   
   // 添加基金相关状态
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showFundPreview, setShowFundPreview] = useState(false);
   const [showHoldingModal, setShowHoldingModal] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
   const [addMessage, setAddMessage] = useState('');
   const [pendingFundCode, setPendingFundCode] = useState<string>('');
   const [pendingFundInfo, setPendingFundInfo] = useState<{ code: string; name: string; nav: number; estimateNav?: number } | null>(null);
@@ -287,7 +285,7 @@ export function HomePage() {
           {/* 搜索结果 */}
           {searchResults.length > 0 && (
             <div className="mt-3 glass-card max-h-60 overflow-y-auto">
-              {searchResults.map((result, index) => (
+              {searchResults.map((result) => (
                 <div
                   key={result.code}
                   className="p-3 hover:bg-white/5 transition-all border-b border-white/5 last:border-b-0"

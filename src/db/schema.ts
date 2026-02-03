@@ -7,7 +7,9 @@ export interface UserWatchlist {
   fundName: string; // 基金名称（缓存，减少查询）
   addedAt: Date; // 添加时间
   sortOrder: number; // 拖拽排序顺序
-  category?: string; // 基金类型（混合型、股票型等）
+  category?: string; // 基金分类（不带中划线，如"混合型"），用于分类展示
+  ftype?: string; // 基金类型原始值（FTYPE，可能带中划线，如"混合型-偏股"）
+  fundType?: string; // 基金类型代码（FUNDTYPE，如"002"）
   userShares?: number; // 用户持仓份额（份）
   userCost?: number; // 用户持仓成本（买入时的净值）
   userAmount?: number; // 用户持仓金额（元），用于快速输入
@@ -62,6 +64,29 @@ export class FundPulseDB extends Dexie {
       navHistory: '[fundCode+date], fundCode, date', // 复合索引：快速查某基金日期范围
       fundDetails: 'fundCode, updatedAt',
       indices: 'code, updatedAt',
+    });
+    // 版本2：添加 ftype 和 fundType 字段
+    this.version(2).stores({
+      watchlist: '++id, fundCode, sortOrder',
+      navHistory: '[fundCode+date], fundCode, date',
+      fundDetails: 'fundCode, updatedAt',
+      indices: 'code, updatedAt',
+    }).upgrade(async (tx) => {
+      // 迁移数据：
+      // 1. 如果已有 category，保留它（作为分类）
+      // 2. 如果 category 存在但没有 ftype，将 category 复制到 ftype（作为原始值）
+      // 3. 如果 ftype 存在但没有 category，从 ftype 提取分类到 category
+      const watchlist = tx.table('watchlist');
+      await watchlist.toCollection().modify((fund) => {
+        if (fund.category && !fund.ftype) {
+          // 有 category 但没有 ftype，将 category 作为原始值
+          fund.ftype = fund.category;
+        } else if (fund.ftype && !fund.category) {
+          // 有 ftype 但没有 category，从 ftype 提取分类
+          const parts = fund.ftype.split('-');
+          fund.category = parts[0] || '';
+        }
+      });
     });
   }
 }

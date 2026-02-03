@@ -42,7 +42,15 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
       // 获取基金显示数据（使用 FundDataManager）
       const fetchDisplayData = async () => {
         try {
-          const displayData = await mergeFundData(fundCode);
+          // 从 watchlist 中获取基金类型信息
+          const fundInfo = watchlist.find(f => f.fundCode === fundCode);
+          const displayData = await mergeFundData(
+            fundCode,
+            undefined,
+            fundInfo?.fundType,
+            fundInfo?.ftype,
+            fundInfo?.fundName
+          );
           // 只有成功获取到数据时才更新，失败时保留旧数据
           if (displayData) {
             setFundDisplayData(displayData);
@@ -74,7 +82,7 @@ export function FundModal({ isOpen, onClose, fundCode }: FundModalProps) {
         clearTimeout(timer);
       };
     }
-  }, [isOpen, fundCode, activeTab, loadFundDetail, loadNavHistory, loadOverviewData]); // 移除 fundDetail 依赖，避免循环触发
+  }, [isOpen, fundCode, activeTab, watchlist, loadFundDetail, loadNavHistory, loadOverviewData]); // 移除 fundDetail 依赖，避免循环触发
 
   // 当切换到概况标签时，加载概况数据
   useEffect(() => {

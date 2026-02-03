@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { db, UserWatchlist, NavHistory } from '../db/schema';
-import { fetchFundRealtime, fetchFundHistory, validateFundCode } from '../api/eastmoney';
+import { fetchFundRealtime, fetchFundHistory, validateFundCode, searchFunds } from '../api/eastmoney';
 
 export interface FundRealtimeInfo extends UserWatchlist {
   nav?: number;
@@ -45,6 +45,13 @@ export const useFundStore = create<FundStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const list = await db.watchlist.orderBy('sortOrder').toArray();
+      console.log('从数据库加载的基金列表:', list.map(f => ({ 
+        code: f.fundCode, 
+        category: f.category, 
+        ftype: f.ftype,
+        fundType: f.fundType 
+      })));
+      
       const funds: FundRealtimeInfo[] = list.map(fund => ({
         ...fund,
         isLoading: false,
@@ -52,7 +59,19 @@ export const useFundStore = create<FundStore>((set, get) => ({
         userShares: fund.userShares || 0,
         userCost: fund.userCost || 0,
         userAmount: fund.userAmount || 0,
+        // 确保分类字段存在（兼容旧数据）
+        category: fund.category || '',
+        ftype: fund.ftype || '',
+        fundType: fund.fundType || '',
       }));
+      
+      console.log('处理后的基金列表:', funds.map(f => ({ 
+        code: f.fundCode, 
+        category: f.category, 
+        ftype: f.ftype,
+        fundType: f.fundType 
+      })));
+      
       set({ watchlist: funds });
       
       // 立即更新实时数据
@@ -77,10 +96,24 @@ export const useFundStore = create<FundStore>((set, get) => ({
       return { success: false, message: '该基金已在自选列表中' };
     }
 
-    // 验证基金代码有效性
+    // 验证基金代码有效性并获取基金类型
     const validation = await validateFundCode(code);
     if (!validation.valid) {
       return { success: false, message: '基金代码不存在或无法访问' };
+    }
+
+    // 获取基金类型信息
+    let ftype = '';
+    let fundType = '';
+    try {
+      const searchResults = await searchFunds(code);
+      const matchedFund = searchResults.find(r => r.code === code);
+      if (matchedFund) {
+        ftype = matchedFund.fundType || '';
+        fundType = matchedFund.fundTypeCode || '';
+      }
+    } catch (e) {
+      console.warn('获取基金类型失败，将使用空值:', e);
     }
 
     try {
@@ -114,12 +147,18 @@ export const useFundStore = create<FundStore>((set, get) => ({
         }
       }
 
+      // 从 ftype 提取分类（不带中划线）
+      const category = ftype ? ftype.split('-')[0] : '';
+
       // 添加到数据库
       await db.watchlist.add({
         fundCode: code,
         fundName: validation.name || code,
         addedAt: new Date(),
         sortOrder,
+        category: category || '',
+        ftype: ftype || '', // 原始值（可能带中划线）
+        fundType: fundType || '',
         userAmount: amount || 0,
         userShares: userShares,
         userCost: userCostPrice || 0,
@@ -294,5 +333,123 @@ export const useFundStore = create<FundStore>((set, get) => ({
     } catch (error) {
       console.error('更新持仓失败:', error);
     }
+  },
+
+  // 批量刷新基金类型
+  refreshFundTypes: async () => {
+    const { watchlist } = get();
+    // 找出所有没有分类的基金（category 为空或 undefined）
+    const fundsWithoutType = watchlist.filter(f => !f.category || f.category === '');
+    
+    if (fundsWithoutType.length === 0) {
+      return { success: 0, failed: 0 };
+    }
+
+    console.log(`开始刷新 ${fundsWithoutType.length} 个基金的类型...`);
+
+    let success = 0;
+    let failed = 0;
+
+    // 串行处理每个基金，避免搜索接口的防抖机制影响
+    for (const fund of fundsWithoutType) {
+      try {
+        console.log(`正在刷新基金 ${fund.fundCode} 的类型...`);
+        
+        // 每个请求之间延迟，确保防抖机制不会影响
+        await new Promise(resolve => setTimeout(resolve, 600)); // 延迟600ms，超过MIN_SEARCH_INTERVAL_MS
+        
+        const searchResults = await searchFunds(fund.fundCode);
+        console.log(`基金 ${fund.fundCode} 搜索结果:`, searchResults.length, '条', searchResults.map(r => ({ code: r.code, name: r.name, fundType: r.fundType, fundTypeCode: r.fundTypeCode })));
+        
+        const matchedFund = searchResults.find(r => r.code === fund.fundCode);
+        if (!matchedFund) {
+          console.warn(`基金 ${fund.fundCode} 未在搜索结果中找到匹配项`);
+          failed++;
+          continue;
+        }
+        
+        console.log(`基金 ${fund.fundCode} 匹配结果:`, {
+          code: matchedFund.code,
+          fundType: matchedFund.fundType,
+          fundTypeCode: matchedFund.fundTypeCode
+        });
+        
+        if (matchedFund.fundType || matchedFund.fundTypeCode) {
+          // 从 ftype 提取分类（不带中划线）
+          const ftypeValue = matchedFund.fundType || '';
+          const category = ftypeValue ? ftypeValue.split('-')[0] : '';
+          
+          console.log(`基金 ${fund.fundCode} 准备更新: category=${category}, ftype=${ftypeValue}, fundType=${matchedFund.fundTypeCode}`);
+          
+          // 更新数据库（使用 put 而不是 modify，确保所有字段都更新）
+          const existingFund = await db.watchlist.where('fundCode').equals(fund.fundCode).first();
+          if (existingFund) {
+            await db.watchlist.update(existingFund.id!, {
+              category: category || '',
+              ftype: ftypeValue || '', // 原始值（可能带中划线）
+              fundType: matchedFund.fundTypeCode || '',
+            });
+            
+            // 验证更新是否成功
+            const updated = await db.watchlist.where('fundCode').equals(fund.fundCode).first();
+            console.log(`基金 ${fund.fundCode} 类型更新成功: category=${updated?.category}, ftype=${updated?.ftype}, fundType=${updated?.fundType}`);
+            
+            if (!updated || updated.category !== category) {
+              console.error(`基金 ${fund.fundCode} 更新验证失败！数据库中的值:`, updated);
+            }
+          } else {
+            console.error(`基金 ${fund.fundCode} 在数据库中未找到，无法更新`);
+          }
+          
+          success++;
+        } else {
+          console.warn(`基金 ${fund.fundCode} 匹配结果中没有类型信息`);
+          failed++;
+        }
+      } catch (error) {
+        console.error(`刷新基金 ${fund.fundCode} 类型失败:`, error);
+        failed++;
+      }
+    }
+
+
+    // 重新加载列表（无论成功与否都刷新，确保UI更新）
+    console.log(`准备重新加载列表，成功 ${success} 个，失败 ${failed} 个`);
+    
+    // 强制重新加载列表
+    const currentWatchlist = get().watchlist;
+    console.log('刷新前的 watchlist:', currentWatchlist.map(f => ({ 
+      code: f.fundCode, 
+      category: f.category 
+    })));
+    
+    await get().loadWatchlist();
+    
+    // 等待一下，确保状态更新完成
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 验证加载后的数据
+    const { watchlist: updatedList } = get();
+    console.log(`列表已重新加载，共 ${updatedList.length} 个基金`);
+    console.log('刷新后的 watchlist:', updatedList.map(f => ({ 
+      code: f.fundCode, 
+      category: f.category,
+      ftype: f.ftype 
+    })));
+    
+    fundsWithoutType.forEach(fund => {
+      const updated = updatedList.find(f => f.fundCode === fund.fundCode);
+      if (updated) {
+        console.log(`基金 ${fund.fundCode} 刷新后的状态: category=${updated.category}, ftype=${updated.ftype}, fundType=${updated.fundType}`);
+        if (!updated.category || updated.category === '') {
+          console.warn(`⚠️ 基金 ${fund.fundCode} 刷新后 category 仍为空！`);
+        }
+      } else {
+        console.warn(`基金 ${fund.fundCode} 在刷新后的列表中未找到`);
+      }
+    });
+
+    console.log(`刷新完成: 成功 ${success} 个，失败 ${failed} 个`);
+    return { success, failed };
   },
 }));

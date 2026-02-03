@@ -2,11 +2,13 @@ import { useMemo, useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import { useDetailStore } from '../store/detailStore';
+import { useFundStore } from '../store/fundStore';
 import { mergeFundData } from '../utils/fundDataManager';
 import clsx from 'clsx';
 
 export function NavChart() {
   const { navHistory, timeRange, setTimeRange, isLoading, fundDetail } = useDetailStore();
+  const { watchlist } = useFundStore();
   const [fundDisplayData, setFundDisplayData] = useState<Awaited<ReturnType<typeof mergeFundData>> | null>(null);
   
   // 获取当前基金的代码
@@ -15,7 +17,15 @@ export function NavChart() {
   // 使用 FundDataManager 获取显示数据（考虑盘中和盘后逻辑）
   useEffect(() => {
     if (fundCode) {
-      mergeFundData(fundCode)
+      // 从 watchlist 中获取基金类型信息
+      const fundInfo = watchlist.find(f => f.fundCode === fundCode);
+      mergeFundData(
+        fundCode,
+        undefined,
+        fundInfo?.fundType,
+        fundInfo?.ftype,
+        fundInfo?.fundName
+      )
         .then(data => {
           // 只有成功获取到数据时才更新，失败时保留旧数据
           if (data) {
@@ -26,7 +36,7 @@ export function NavChart() {
           // 静默失败，保留旧数据
         });
     }
-  }, [fundCode]);
+  }, [fundCode, watchlist]);
 
   const ranges: Array<{ key: typeof timeRange; label: string }> = [
     { key: '30d', label: '1月' },

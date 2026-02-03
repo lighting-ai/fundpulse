@@ -6,9 +6,51 @@
  * - 盘中（9:30-15:00）：使用实时估算净值（gsz）和估算涨跌幅（gszzl）
  * - 盘后（15:00-19:00）：使用收盘估算（gsz）
  * - 日终（19:00后）：使用正式净值（pingzhongdata 的 Data_netWorthTrend）
+ * 
+ * 根据基金类型判断是否支持实时估值：
+ * - 支持：股票型(001)、混合型(002)、指数型(003)，但排除名字包含"ETF"的
+ * - 不支持：债券型(004)、货币型(005)、QDII(006)、FOF(007)、ETF相关基金
  */
 
 import { fetchFundRealtime, fetchNetWorthTrend } from '../api/eastmoney';
+
+/**
+ * 判断基金是否支持实时估值
+ * @param fundTypeCode 基金类型代码（FUNDTYPE，如"002"）
+ * @param fundType 基金类型（FTYPE，如"混合型-偏股"）
+ * @param fundName 基金名称
+ * @returns 是否支持实时估值
+ */
+export const supportsRealtimeEstimate = (
+  fundTypeCode?: string,
+  fundType?: string,
+  fundName?: string
+): boolean => {
+  // 如果没有类型信息，默认不支持（历史数据）
+  if (!fundTypeCode && !fundType) {
+    return false;
+  }
+
+  // 必须是股票型(001)、混合型(002)、指数型(003)
+  const supportedTypes = ['001', '002', '003'];
+  if (fundTypeCode && !supportedTypes.includes(fundTypeCode)) {
+    return false;
+  }
+
+  // 如果基金名称包含"ETF"，不支持实时估值
+  const name = fundName || '';
+  if (name.includes('ETF')) {
+    return false;
+  }
+
+  // 如果基金类型字符串包含"ETF"，也不支持
+  const type = fundType || '';
+  if (type.includes('ETF')) {
+    return false;
+  }
+
+  return true;
+};
 
 export interface NetWorthTrendItem {
   x: number; // 时间戳（毫秒）
@@ -133,7 +175,10 @@ const CACHE_DURATION = 5 * 60 * 1000;
 
 export const mergeFundData = async (
   fundCode: string,
-  historyData?: NetWorthTrendItem[] | null
+  historyData?: NetWorthTrendItem[] | null,
+  fundTypeCode?: string,
+  fundType?: string,
+  fundName?: string
 ): Promise<FundDisplayData | null> => {
   // 如果没有提供历史数据，尝试获取
   let trendData = historyData;
@@ -168,14 +213,17 @@ export const mergeFundData = async (
   const previousNav = trendData ? getPreviousCloseNav(trendData) : 0;
   
   // 判断是否应该使用实时数据
-  // 盘中（9:30-15:00）或盘后（15:00-19:00）使用实时估算
-  const shouldUseRealtime = isTradingHours() || isAfterClose();
+  // 1. 必须在交易时间（盘中或盘后）
+  // 2. 基金必须支持实时估值
+  const shouldUseRealtime = (isTradingHours() || isAfterClose()) && 
+    supportsRealtimeEstimate(fundTypeCode, fundType, fundName);
   
   if (shouldUseRealtime) {
     try {
       // 获取实时数据
       const realtimeData = await fetchFundRealtime(fundCode);
       
+      // 兜底逻辑：如果返回的估算净值为0或空，说明该基金不支持实时估值，跳过
       if (realtimeData.estimateNav && realtimeData.estimateNav > 0) {
         return {
           netValue: realtimeData.estimateNav, // gsz: 实时估算净值
@@ -186,6 +234,9 @@ export const mergeFundData = async (
           updateTime: realtimeData.valuationTime || '',
           statusLabel: getStatusLabel(true, realtimeData.valuationTime),
         };
+      } else {
+        // 兜底：即使是我们规定的支持类型，如果返回空，也跳过实时估算
+        console.warn(`基金 ${fundCode} 实时估值接口返回空，跳过实时估算`);
       }
     } catch (error) {
       console.warn(`获取基金 ${fundCode} 实时数据失败:`, error);

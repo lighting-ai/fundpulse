@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
 import { useFundStore } from '../store/fundStore';
 import { useAppStore } from '../store/appStore';
@@ -8,9 +8,12 @@ import { mergeFundData, calculateTodayProfit, calculateTotalProfit } from '../ut
 import { FlipNumber } from './FlipNumber';
 
 export function PortfolioPage() {
-  const { watchlist, selectedFundCode, selectFund, removeFund, updateUserHolding, addFund } = useFundStore();
+  const { watchlist, selectedFundCode, selectFund, removeFund, updateUserHolding, addFund, refreshFundTypes } = useFundStore();
   const { refreshPortfolioTrigger } = useAppStore();
   const [showFundModal, setShowFundModal] = useState(false);
+  const [displayMode, setDisplayMode] = useState<'list' | 'category'>('list'); // 展示模式：列表或分类
+  const [isRefreshingTypes, setIsRefreshingTypes] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('全部'); // 选中的分类
   
   // 添加基金相关状态
   const [showAddModal, setShowAddModal] = useState(false);
@@ -52,7 +55,13 @@ export function PortfolioPage() {
         const updates = await Promise.allSettled(
           watchlist.map(async (fund) => {
             try {
-              const displayData = await mergeFundData(fund.fundCode);
+              const displayData = await mergeFundData(
+                fund.fundCode,
+                undefined,
+                fund.fundType,
+                fund.ftype,
+                fund.fundName
+              );
               // 只有成功获取到数据时才返回，null 表示获取失败，保留旧数据
               if (displayData) {
                 return { code: fund.fundCode, data: displayData };
@@ -497,10 +506,99 @@ export function PortfolioPage() {
     }
   };
 
+  // 获取基金分类（使用 category 字段，如果没有则显示 --）
+  const getFundCategory = (category?: string): string => {
+    return category || '--';
+  };
+
+  // 按分类分组基金
+  const groupedFunds = useMemo(() => {
+    const groups: Record<string, typeof watchlist> = {};
+    watchlist.forEach(fund => {
+      const category = getFundCategory(fund.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(fund);
+    });
+    return groups;
+  }, [watchlist]);
+
+  // 获取所有分类列表（用于标签页）
+  const categories = useMemo(() => {
+    const cats = ['全部', ...Object.keys(groupedFunds).sort()];
+    return cats;
+  }, [groupedFunds]);
+
+  // 根据选中的分类过滤基金列表
+  const filteredWatchlist = useMemo(() => {
+    if (displayMode === 'list') {
+      return watchlist;
+    }
+    if (selectedCategory === '全部') {
+      return watchlist;
+    }
+    return groupedFunds[selectedCategory] || [];
+  }, [watchlist, displayMode, selectedCategory, groupedFunds]);
+
+  // 检查是否有未分类的基金（category 为空）
+  const hasUncategorizedFunds = watchlist.some(f => !f.category || f.category === '');
+
+  // 切换展示模式
+  const handleToggleDisplayMode = () => {
+    if (displayMode === 'list') {
+      // 从列表切换到分类展示
+      if (hasUncategorizedFunds) {
+        const confirmed = confirm('存在未分类的基金（显示为--），是否先刷新基金类型？\n\n点击"确定"将刷新基金类型，点击"取消"将直接切换（未分类基金将显示在"--"分类中）');
+        if (confirmed) {
+          handleRefreshFundTypes();
+          return;
+        }
+      }
+      setDisplayMode('category');
+      setSelectedCategory('全部'); // 切换到分类模式时，默认选择"全部"
+    } else {
+      // 从分类切换到列表
+      setDisplayMode('list');
+      setSelectedCategory('全部'); // 重置分类选择
+    }
+  };
+
+  // 批量刷新基金类型
+  const handleRefreshFundTypes = async () => {
+    setIsRefreshingTypes(true);
+    try {
+      const result = await refreshFundTypes();
+      
+      // 等待状态更新完成（Zustand 状态更新是同步的，但需要等待数据库操作完成）
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // 验证 watchlist 是否已更新（watchlist 会自动从 store 更新）
+      console.log('刷新完成后的 watchlist:', watchlist.map(f => ({ 
+        code: f.fundCode, 
+        category: f.category, 
+        ftype: f.ftype 
+      })));
+      
+      if (result.success > 0) {
+        alert(`成功刷新 ${result.success} 个基金的类型${result.failed > 0 ? `，${result.failed} 个失败` : ''}`);
+      } else if (result.failed > 0) {
+        alert(`刷新失败，共 ${result.failed} 个基金`);
+      } else {
+        alert('所有基金类型已是最新');
+      }
+    } catch (error) {
+      console.error('刷新基金类型失败:', error);
+      alert('刷新基金类型失败，请重试');
+    } finally {
+      setIsRefreshingTypes(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-void bg-scanline pt-20">
       {/* 资产概览卡片区 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 max-w-[1920px] mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 max-w-[1400px] mx-auto">
         {/* 总资产 */}
         <div className="glass-card p-2.5 sm:p-3 md:p-4 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-neon-blue/10 rounded-full blur-3xl -mr-4 sm:-mr-6 -mt-4 sm:-mt-6" />
@@ -629,7 +727,7 @@ export function PortfolioPage() {
       </div>
 
       {/* 自选基金列表 */}
-      <div className="px-3 sm:px-4 md:px-6 pb-4 sm:pb-6 max-w-[1920px] mx-auto">
+      <div className="px-3 sm:px-4 md:px-6 pb-4 sm:pb-6 max-w-[1400px] mx-auto">
         {/* 添加基金按钮 */}
         <div className="mb-3 sm:mb-4 flex items-center justify-between">
           <h2 className="text-lg sm:text-xl font-semibold text-text-primary">我的自选</h2>
@@ -684,26 +782,38 @@ export function PortfolioPage() {
                     animationFillMode: 'both',
                   }}
                 >
-                  {/* Header: 基金名称 + AI徽章 */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0" onClick={() => handleFundClick(fund.fundCode)}>
+                  {/* Header: 基金名称 */}
+                  <div className="flex items-start justify-between mb-3 relative">
+                    <div className="flex-1 min-w-0 pr-2" onClick={() => handleFundClick(fund.fundCode)}>
                       <h3 className="text-base sm:text-[17px] font-semibold text-white mb-1 truncate">
                         {fund.fundName}
                       </h3>
-                      <div className="text-xs sm:text-[13px] text-white/60 font-mono">
-                        {fund.fundCode}
+                      <div className="text-xs sm:text-[13px] text-white/60 font-mono flex items-center gap-2">
+                        <span>{fund.fundCode}</span>
+                        {fund.category ? (
+                          <>
+                            <span className="text-white/40">·</span>
+                            <span className="text-white/50">{fund.category}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-white/40">·</span>
+                            <span className="text-white/30">--</span>
+                          </>
+                        )}
                       </div>
                     </div>
+                    {/* AI标识按钮 - 右上角 */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         // TODO: 打开AI诊断（功能待开发）
                         console.log('AI诊断', fund.fundCode);
                       }}
-                      className="px-2 sm:px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 text-[10px] sm:text-xs shrink-0 ml-2 hover:bg-purple-500/30 active:bg-purple-500/40 transition-colors cursor-pointer"
+                      className="absolute top-0 right-0 p-2 rounded-lg bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 active:bg-neon-purple/30 transition-colors flex items-center justify-center shrink-0"
                       title="AI 诊断（功能开发中）"
                     >
-                      AI
+                      <i className="ri-robot-2-line text-base sm:text-lg" />
                     </button>
                   </div>
 
@@ -846,27 +956,94 @@ export function PortfolioPage() {
 
         {/* 桌面端：表格布局 (≥ md) */}
         <div className="hidden md:block glass-card overflow-hidden">
-          <table className="w-full text-left">
+          {/* 表格头部工具栏 */}
+          <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-white/5">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleToggleDisplayMode}
+                className={clsx(
+                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
+                  displayMode === 'list'
+                    ? 'bg-neon-blue/20 text-neon-blue border-2 border-neon-blue'
+                    : 'bg-white/5 text-text-secondary hover:bg-white/10 border-2 border-transparent'
+                )}
+              >
+                {displayMode === 'list' ? '切换到分类模式' : '切换到列表模式'}
+              </button>
+              {displayMode === 'category' && hasUncategorizedFunds && (
+                <button
+                  onClick={handleRefreshFundTypes}
+                  disabled={isRefreshingTypes}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 bg-white/5 text-text-secondary hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  title="刷新基金类型"
+                >
+                  <i className={clsx('ri-refresh-line', isRefreshingTypes && 'animate-spin')} />
+                  刷新类型
+                </button>
+              )}
+            </div>
+            {displayMode === 'category' && hasUncategorizedFunds && (
+              <div className="text-xs text-text-tertiary flex items-center gap-2">
+                <i className="ri-information-line" />
+                <span>存在未分类基金，点击刷新类型按钮更新</span>
+              </div>
+            )}
+          </div>
+          
+          {/* 分类标签页（仅在分类模式下显示） */}
+          {displayMode === 'category' && (
+            <div className="px-6 py-3 border-b border-white/10 bg-white/5 flex items-center gap-2 flex-wrap">
+              {categories.map((category) => {
+                const count = category === '全部' ? watchlist.length : (groupedFunds[category]?.length || 0);
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={clsx(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                      selectedCategory === category
+                        ? 'bg-neon-blue/20 text-neon-blue border-2 border-neon-blue shadow-lg shadow-neon-blue/20'
+                        : 'bg-white/5 text-text-secondary hover:bg-white/10 border-2 border-transparent'
+                    )}
+                  >
+                    {category}
+                    {count > 0 && (
+                      <span className={clsx(
+                        'ml-2 text-xs',
+                        selectedCategory === category ? 'text-neon-blue/80' : 'text-text-tertiary'
+                      )}>
+                        {count}只
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <table className="w-full text-left table-fixed">
             <thead className="bg-white/5 text-xs text-text-tertiary uppercase tracking-wider sticky top-0 z-10">
               <tr>
-                <th className="py-3 pl-6">基金名称</th>
-                <th className="py-3">最新净值</th>
-                <th className="py-3">持有金额</th>
-                <th className="py-3">今日盈亏</th>
-                <th className="py-3">累计收益</th>
-                <th className="py-3 text-center">AI</th>
-                <th className="py-3 pr-6 text-right">操作</th>
+                <th className="py-3 pl-6 w-[200px]">基金名称</th>
+                <th className="py-3 w-[100px]">类型</th>
+                <th className="py-3 w-[130px]">最新净值</th>
+                <th className="py-3 w-[150px]">持有金额</th>
+                <th className="py-3 w-[130px]">今日盈亏</th>
+                <th className="py-3 w-[130px]">累计收益</th>
+                <th className="py-3 pr-6 text-right w-[100px]">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {watchlist.length === 0 ? (
+              {filteredWatchlist.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-text-tertiary">
-                    暂无自选基金，请前往首页添加
+                    {displayMode === 'category' && selectedCategory !== '全部'
+                      ? `暂无"${selectedCategory}"分类的基金`
+                      : '暂无自选基金，请前往首页添加'}
                   </td>
                 </tr>
               ) : (
-                watchlist.map((fund) => {
+                // 显示过滤后的基金列表（列表模式和分类模式共用）
+                filteredWatchlist.map((fund) => {
                   const userShares = fund.userShares || 0;
                   const userCost = fund.userCost || 0;
                   const displayData = fundDisplayData.get(fund.fundCode);
@@ -905,6 +1082,11 @@ export function PortfolioPage() {
                         </div>
                         <div className="text-xs text-text-tertiary mt-1 font-mono">
                           {fund.fundCode}
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <div className="text-sm text-text-primary">
+                          {fund.category || '--'}
                         </div>
                       </td>
                       <td className="py-4">
@@ -1003,18 +1185,6 @@ export function PortfolioPage() {
                           />
                         </div>
                       </td>
-                      <td className="py-4 text-center">
-                        <button
-                          onClick={() => {
-                            // TODO: 打开AI诊断（功能待开发）
-                            console.log('AI诊断', fund.fundCode);
-                          }}
-                          className="w-8 h-8 rounded-full bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 hover:scale-110 active:bg-neon-purple/30 active:scale-95 transition-all duration-150 flex items-center justify-center mx-auto"
-                          title="AI 诊断（功能开发中）"
-                        >
-                          <i className="ri-robot-2-line" />
-                        </button>
-                      </td>
                       <td className="py-4 pr-6 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
@@ -1037,6 +1207,16 @@ export function PortfolioPage() {
                             title="删除"
                           >
                             <i className="ri-delete-bin-line" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              // TODO: 打开AI诊断（功能待开发）
+                              console.log('AI诊断', fund.fundCode);
+                            }}
+                            className="w-8 h-8 rounded-full bg-neon-purple/10 text-neon-purple hover:bg-neon-purple/20 hover:scale-110 active:bg-neon-purple/30 active:scale-90 flex items-center justify-center transition-all duration-150"
+                            title="AI 诊断（功能开发中）"
+                          >
+                            <i className="ri-robot-2-line" />
                           </button>
                         </div>
                       </td>
