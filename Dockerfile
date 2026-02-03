@@ -17,19 +17,23 @@ COPY . .
 # 构建应用
 RUN npm run build
 
-# 阶段2: 生产阶段 - 使用 Nginx 提供静态文件服务
-FROM nginx:alpine
+# 阶段2: 生产阶段 - 使用 Caddy 提供静态文件服务和 API 代理
+FROM caddy:2-alpine
 
-# 复制构建产物到 Nginx 目录（支持子路径部署）
+# 复制构建产物到 Caddy 目录（支持子路径部署）
 # 由于 vite.config.ts 中 base 设置为 '/fundpulse/'，需要将文件放在子目录中
-RUN mkdir -p /usr/share/nginx/html/fundpulse
-COPY --from=builder /app/dist /usr/share/nginx/html/fundpulse
+RUN mkdir -p /usr/share/caddy/fundpulse
+COPY --from=builder /app/dist /usr/share/caddy/fundpulse
 
-# 复制自定义 Nginx 配置（SPA 路由支持、Gzip 压缩、缓存策略等）
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 验证文件是否正确复制（调试用）
+RUN ls -la /usr/share/caddy/fundpulse/ || echo "目录为空或不存在"
+RUN ls -la /usr/share/caddy/fundpulse/index.html || echo "index.html 不存在"
+
+# 复制 Caddy 配置文件
+COPY Caddyfile /etc/caddy/Caddyfile
 
 # 暴露端口
 EXPOSE 80
 
-# 启动 Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# 启动 Caddy
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]

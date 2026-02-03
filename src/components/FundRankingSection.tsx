@@ -236,11 +236,13 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
                           >
                             {fund.name}
                           </div>
-                          <div className="text-[8px] sm:text-[9px] md:text-[10px] text-text-tertiary flex items-center gap-1 sm:gap-1.5 mt-0.5">
+                          <div className="text-[8px] sm:text-[9px] md:text-[10px] text-text-tertiary flex items-center gap-1 sm:gap-1.5 mt-0.5 flex-wrap">
                             <span className="font-mono truncate">{fund.code}</span>
-                            <span className="px-1 py-0.5 rounded bg-white/5 text-[7px] sm:text-[8px] md:text-[9px] shrink-0">
-                              {fund.type}
-                            </span>
+                            {fund.dataDate && (
+                              <span className="px-1 py-0.5 rounded bg-white/5 text-[7px] sm:text-[8px] md:text-[9px] font-mono shrink-0">
+                                {fund.dataDate}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

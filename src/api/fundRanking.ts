@@ -11,6 +11,7 @@ export interface RankedFund {
   recent1Year: number;
   thisYear: number;
   manager: string;
+  dataDate: string; // 数据日期（净值日期）
 }
 
 // 兼容旧接口
@@ -28,7 +29,8 @@ const FIELD_INDEX = {
   code: 0,
   name: 1,
   pinyin: 2,
-  type: 3,
+  dataDate: 3, // 数据日期（净值日期）
+  // type 字段在当前API返回中不在固定位置，暂时使用默认值
   manager: 21, // 注意：这个位置可能变动
   nav: 5,
   accNav: 6,
@@ -100,7 +102,7 @@ const initRankDataSetter = () => {
               return {
                 code: cols[FIELD_INDEX.code] || '',
                 name: cols[FIELD_INDEX.name] || '',
-                type: cols[FIELD_INDEX.type] || '混合型',
+                type: '混合型', // 基金类型暂时使用默认值，API返回中类型字段位置不确定
                 nav: parseFloat(cols[FIELD_INDEX.nav]) || 0,
                 accNav: parseFloat(cols[FIELD_INDEX.accNav]) || 0,
                 dailyGrowth: parseFloat(cols[FIELD_INDEX.dailyGrowth]) || 0,
@@ -109,7 +111,8 @@ const initRankDataSetter = () => {
                 recent3Month: parseFloat(cols[FIELD_INDEX.recent3Month]) || 0,
                 recent1Year: parseFloat(cols[FIELD_INDEX.recent1Year]) || 0,
                 thisYear: parseFloat(cols[FIELD_INDEX.thisYear]) || 0,
-                manager: cols[FIELD_INDEX.manager] || '-'
+                manager: cols[FIELD_INDEX.manager] || '-',
+                dataDate: cols[FIELD_INDEX.dataDate] || '' // 数据日期（净值日期）
               };
             });
             console.log(`✅ 解析成功，数据条数: ${funds.length}`);
@@ -183,6 +186,26 @@ export const fetchFundRanking = (options: {
   // 添加版本号参数（避免缓存）
   params.append('v', Math.random().toString());
 
+  // 构建 API URL
+  // 生产环境使用代理（通过 Caddy），开发环境直接调用原始 API
+  const getApiUrl = () => {
+    // 检查是否在开发环境（只允许 localhost 和 127.0.0.1 直接调用原始 API）
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                          window.location.hostname === '127.0.0.1' ||
+                          window.location.hostname.includes('localhost') ||
+                          window.location.hostname.includes('127.0.0.1');
+    
+    if (isDevelopment) {
+      // 开发环境直接调用原始 API
+      return `https://fund.eastmoney.com/data/rankhandler.aspx?${params.toString()}`;
+    } else {
+      // 生产环境使用相对路径，通过 Caddy 代理
+      const apiUrl = `/api/fund-ranking?${params.toString()}`;
+      console.log('📡 使用代理 API:', apiUrl, '当前域名:', window.location.hostname);
+      return apiUrl;
+    }
+  };
+
   return new Promise((resolve, reject) => {
     // 初始化全局 setter（如果还没初始化）
     initRankDataSetter();
@@ -227,7 +250,7 @@ export const fetchFundRanking = (options: {
       timeout,
     });
 
-    script.src = `https://fund.eastmoney.com/data/rankhandler.aspx?${params.toString()}`;
+    script.src = getApiUrl();
     
     script.onerror = () => {
       // 从队列中查找并移除当前请求

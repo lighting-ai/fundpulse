@@ -1,0 +1,95 @@
+# FundPulse Caddy 配置
+# 同时提供静态文件服务和 API 反向代理
+
+:80
+
+# 启用访问日志和错误日志
+log {
+	output stdout
+	format console
+	level DEBUG
+}
+
+# Gzip 压缩
+encode gzip
+
+# API 代理：基金排行榜接口
+# 设置 Referer 绕过防盗链
+handle /api/fund-ranking* {
+	# 重写路径：将 /api/fund-ranking?xxx 重写为 /data/rankhandler.aspx?xxx
+	# 使用 uri replace 替换路径前缀，查询参数会自动保留
+	uri replace /api/fund-ranking /data/rankhandler.aspx
+	
+	# 反向代理到目标服务器（只包含 scheme 和 host）
+	reverse_proxy https://fund.eastmoney.com {
+		header_up Referer "https://fund.eastmoney.com/"
+		header_up Host "fund.eastmoney.com"
+		# 移除其他可能干扰的 headers
+		header_down -X-Frame-Options
+		header_down -X-XSS-Protection
+	}
+}
+
+# 根路径重定向到子路径
+handle / {
+	redir / /fundpulse/ 301
+}
+
+# 处理不带尾部斜杠的 /fundpulse
+handle /fundpulse {
+	redir /fundpulse /fundpulse/ 301
+}
+
+# 静态文件服务（SPA 支持）
+handle /fundpulse/* {
+	# 移除 /fundpulse 前缀
+	uri strip_prefix /fundpulse
+	# 设置根目录
+	root * /usr/share/caddy/fundpulse
+	
+	# SPA 路由：对于非静态资源的请求，重写为 index.html
+	@spa {
+		not path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot *.webp *.json
+	}
+	rewrite @spa /index.html
+	
+	# 提供文件服务
+	file_server
+
+	# 静态资源缓存（长期缓存）
+	@static {
+		path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot *.webp
+	}
+	header @static {
+		Cache-Control "public, max-age=31536000, immutable"
+	}
+
+	# HTML 文件不缓存
+	@html {
+		path *.html
+	}
+	header @html {
+		Cache-Control "no-cache, no-store, must-revalidate"
+		Pragma "no-cache"
+	}
+
+	# Service Worker 不缓存
+	@sw {
+		path *service-worker.js *sw.js *workbox-*.js
+	}
+	header @sw {
+		Cache-Control "no-cache, no-store, must-revalidate"
+		Pragma "no-cache"
+	}
+}
+
+# 处理错误的 Service Worker 路径
+handle /_static/* {
+	respond 404
+}
+
+
+# 禁止访问隐藏文件
+handle /.?* {
+	respond 404
+}
