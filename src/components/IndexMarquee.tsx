@@ -38,8 +38,7 @@ export function IndexMarquee() {
     };
     
     load();
-    const timer = setInterval(load, 30000); // 30秒刷新
-    return () => clearInterval(timer);
+    // 注意：自动刷新已由 Header 的倒计时统一控制，这里不再需要自动刷新逻辑
   }, []);
 
   // 自动滚动动画

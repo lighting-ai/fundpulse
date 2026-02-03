@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type RefreshInterval = '30s' | '1m' | '5m';
+export type RefreshInterval = '30s' | '60s' | '90s';
 
 interface SettingsStore {
   refreshInterval: RefreshInterval;
@@ -12,7 +12,7 @@ interface SettingsStore {
 const getStoredInterval = (): RefreshInterval => {
   try {
     const stored = localStorage.getItem('fundpulse-refresh-interval');
-    if (stored && ['30s', '1m', '5m'].includes(stored)) {
+    if (stored && ['30s', '60s', '90s'].includes(stored)) {
       return stored as RefreshInterval;
     }
   } catch (e) {
@@ -36,10 +36,10 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     switch (interval) {
       case '30s':
         return 30 * 1000;
-      case '1m':
+      case '60s':
         return 60 * 1000;
-      case '5m':
-        return 5 * 60 * 1000;
+      case '90s':
+        return 90 * 1000;
       default:
         return 30 * 1000;
     }

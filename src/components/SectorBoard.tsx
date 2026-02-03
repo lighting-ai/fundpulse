@@ -30,15 +30,8 @@ export function SectorBoard() {
   // 监听 activeTab 和 refreshSectorTrigger 变化，触发刷新
   useEffect(() => {
     loadSectors();
+    // 注意：自动刷新已由 Header 的倒计时统一控制，这里不再需要自动刷新逻辑
   }, [loadSectors, refreshSectorTrigger]);
-
-  // 定时刷新：使用设置中的刷新间隔
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadSectors();
-    }, getRefreshIntervalMs());
-    return () => clearInterval(interval);
-  }, [loadSectors, getRefreshIntervalMs]);
 
   /**
    * 紫调热力背景计算

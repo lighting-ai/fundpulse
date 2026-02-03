@@ -13,8 +13,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const intervals: Array<{ value: RefreshInterval; label: string }> = [
     { value: '30s', label: '30秒' },
-    { value: '1m', label: '1分钟' },
-    { value: '5m', label: '5分钟' },
+    { value: '60s', label: '60秒' },
+    { value: '90s', label: '90秒' },
   ];
 
   return (

@@ -29,14 +29,11 @@ export function IndexBar() {
   const { getRefreshIntervalMs } = useSettingsStore();
   const [selectedCategory, setSelectedCategory] = useState<IndexCategory | null>(null);
 
+  // 初始加载
   useEffect(() => {
     loadIndices();
-    // 根据配置的刷新间隔自动刷新指数数据
-    const interval = setInterval(() => {
-      loadIndices();
-    }, getRefreshIntervalMs());
-    return () => clearInterval(interval);
-  }, [loadIndices, getRefreshIntervalMs]);
+    // 注意：自动刷新已由 Header 的倒计时统一控制，这里不再需要自动刷新逻辑
+  }, [loadIndices]);
 
   // 按分类分组
   const groupedIndices = useMemo(() => {

@@ -18,14 +18,6 @@ function App() {
     loadWatchlist();
   }, [loadWatchlist]);
 
-  // 自动刷新实时数据（根据设置）
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateRealtimeData();
-    }, getRefreshIntervalMs());
-    return () => clearInterval(interval);
-  }, [updateRealtimeData, getRefreshIntervalMs]);
-
   const renderContent = () => {
     switch (currentView) {
       case 'home':

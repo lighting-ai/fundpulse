@@ -1,18 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import clsx from 'clsx';
 import { useFundStore } from '../store/fundStore';
 import { useAppStore } from '../store/appStore';
 import { useIndexStore } from '../store/indexStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { SettingsModal } from './SettingsModal';
 
 export function Header() {
   const { updateRealtimeData } = useFundStore();
-  const { currentView, setCurrentView, triggerRankingRefresh, triggerSectorRefresh } = useAppStore();
+  const { currentView, setCurrentView, triggerRankingRefresh, triggerSectorRefresh, triggerPortfolioRefresh } = useAppStore();
   const { refreshIndices } = useIndexStore();
+  const { refreshInterval, getRefreshIntervalMs } = useSettingsStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleRefresh = async () => {
+  // 重置倒计时（不依赖 performRefresh，避免循环依赖）
+  const resetCountdown = useCallback(() => {
+    const intervalMs = getRefreshIntervalMs();
+    const totalSeconds = Math.floor(intervalMs / 1000);
+    
+    // 清除旧的定时器
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    if (autoRefreshTimerRef.current) {
+      clearTimeout(autoRefreshTimerRef.current);
+      autoRefreshTimerRef.current = null;
+    }
+    
+    // 重置倒计时数字
+    setCountdown(totalSeconds);
+    
+    // 启动倒计时
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          // 倒计时结束，触发自动刷新
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          return 0; // 刷新期间显示 0
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [getRefreshIntervalMs]);
+
+  // 执行刷新逻辑
+  const performRefresh = useCallback(async () => {
     if (currentView === 'faq') {
       // FAQ 页面不需要刷新
       return;
@@ -28,13 +68,59 @@ export function Header() {
       } else {
         // 自选页：刷新自选列表
         await updateRealtimeData();
+        // 触发自选页显示数据刷新
+        triggerPortfolioRefresh();
       }
     } catch (error) {
       console.error('刷新失败:', error);
     } finally {
-      setTimeout(() => setIsRefreshing(false), 1000);
+      setTimeout(() => {
+        setIsRefreshing(false);
+        // 刷新完成后，重置倒计时开始下一轮
+        resetCountdown();
+      }, 1000);
     }
+  }, [currentView, triggerRankingRefresh, triggerSectorRefresh, triggerPortfolioRefresh, refreshIndices, updateRealtimeData, resetCountdown]);
+
+  // 监听倒计时到 0，触发自动刷新
+  useEffect(() => {
+    if (countdown === 0 && !isRefreshing && currentView !== 'faq') {
+      performRefresh();
+    }
+  }, [countdown, isRefreshing, currentView, performRefresh]);
+
+  // 手动刷新（用户点击）
+  const handleRefresh = async () => {
+    // 重置倒计时
+    resetCountdown();
+    // 执行刷新
+    await performRefresh();
   };
+
+  // 初始化倒计时和自动刷新
+  useEffect(() => {
+    if (currentView !== 'faq') {
+      resetCountdown();
+    } else {
+      // FAQ 页面清除倒计时
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      setCountdown(0);
+    }
+    
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      if (autoRefreshTimerRef.current) {
+        clearTimeout(autoRefreshTimerRef.current);
+        autoRefreshTimerRef.current = null;
+      }
+    };
+  }, [refreshInterval, currentView, resetCountdown]);
 
   return (
     <>
@@ -137,15 +223,55 @@ export function Header() {
             </a>
             <button
               onClick={handleRefresh}
-              className="p-1.5 sm:p-2 text-text-secondary hover:text-text-primary active:text-neon-blue active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10"
-              title="刷新数据"
+              className="relative p-1.5 sm:p-2 text-text-secondary hover:text-text-primary active:text-neon-blue active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10 flex items-center justify-center"
+              title={currentView === 'faq' ? '刷新数据' : `刷新数据 (${countdown}秒后自动刷新)`}
+              disabled={currentView === 'faq'}
             >
-              <i
-                className={clsx(
-                  'ri-refresh-line text-lg sm:text-xl',
-                  isRefreshing && 'refreshing'
-                )}
-              />
+              {currentView !== 'faq' ? (
+                <>
+                  {/* 圆形进度条背景 */}
+                  <svg
+                    className="absolute inset-0 w-full h-full transform -rotate-90"
+                    viewBox="0 0 36 36"
+                    style={{ width: '100%', height: '100%' }}
+                  >
+                    {/* 背景圆 */}
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 0.1)"
+                      strokeWidth="2"
+                    />
+                    {/* 进度圆 */}
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeDasharray={`${2 * Math.PI * 16}`}
+                      strokeDashoffset={`${2 * Math.PI * 16 * (1 - countdown / Math.floor(getRefreshIntervalMs() / 1000))}`}
+                      className="text-neon-blue transition-all duration-1000"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  {/* 倒计时数字（显示在圆圈中心） */}
+                  {!isRefreshing ? (
+                    <span className="text-[12px] sm:text-[13px] font-mono font-semibold text-neon-blue z-10 relative">
+                      {countdown}
+                    </span>
+                  ) : (
+                    /* 刷新时显示旋转的刷新图标 */
+                    <i className="ri-refresh-line text-lg sm:text-xl text-neon-blue refreshing z-10 relative" />
+                  )}
+                </>
+              ) : (
+                /* FAQ 页面显示普通刷新图标 */
+                <i className="ri-refresh-line text-lg sm:text-xl relative z-10" />
+              )}
             </button>
             <button
               onClick={() => setShowSettings(true)}

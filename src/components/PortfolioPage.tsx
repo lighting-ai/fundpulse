@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { useFundStore } from '../store/fundStore';
+import { useAppStore } from '../store/appStore';
 import { FundModal } from './FundModal';
 import { validateFundCode, fetchFundRealtime } from '../api/eastmoney';
 import { mergeFundData, calculateTodayProfit, calculateTotalProfit } from '../utils/fundDataManager';
@@ -8,6 +9,7 @@ import { FlipNumber } from './FlipNumber';
 
 export function PortfolioPage() {
   const { watchlist, selectedFundCode, selectFund, removeFund, updateUserHolding, updateRealtimeData, addFund } = useFundStore();
+  const { refreshPortfolioTrigger } = useAppStore();
   const [showFundModal, setShowFundModal] = useState(false);
   
   // 添加基金相关状态
@@ -85,16 +87,18 @@ export function PortfolioPage() {
     loadFundDisplayData();
   }, [watchlist]);
 
-  // 页面加载时立即刷新一次数据
+  // 监听刷新触发器，当 Header 触发刷新时重新加载显示数据
   useEffect(() => {
-    if (watchlist.length > 0) {
-      updateRealtimeData();
-      // 刷新实时数据后，重新加载显示数据
+    if (refreshPortfolioTrigger > 0) {
+      // 延迟一下，等待 updateRealtimeData 完成
       setTimeout(() => {
         loadFundDisplayData();
-      }, 1000);
+      }, 500);
     }
-  }, []); // 只在组件挂载时执行一次
+  }, [refreshPortfolioTrigger]);
+
+  // 注意：自动刷新已由 Header 的倒计时统一控制，页面加载时不再自动刷新
+  // 首次数据加载由 watchlist 变化时的 useEffect 触发
 
   // 计算总资产（估算）：使用 FundDataManager 的净值数据
   // 如果 displayData 未加载，使用 fund 中的后备数据，避免清零
@@ -182,18 +186,7 @@ export function PortfolioPage() {
   // 计算累计收益百分比：相对于总成本
   const totalProfitPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
 
-  // 自动定时更新实时数据和显示数据（每30秒）
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateRealtimeData();
-      // 更新实时数据后，重新加载显示数据（考虑盘中/盘后逻辑）
-      setTimeout(() => {
-        loadFundDisplayData();
-      }, 1000);
-    }, 30000); // 30秒更新一次
-
-    return () => clearInterval(interval);
-  }, [updateRealtimeData]);
+  // 注意：自动刷新已由 Header 的倒计时统一控制，这里不再需要自动刷新逻辑
 
   const handleFundClick = (code: string) => {
     selectFund(code);
