@@ -76,6 +76,10 @@ PWA 需要图标文件，请创建以下文件：
 - 基金数据：东方财富网（天天基金）
 - 指数数据：新浪财经
 
+## 📋 更新日志
+
+查看 [CHANGELOG](./docs/summary/CHANGELOG.md) 了解最新版本的功能更新和问题修复。
+
 ## 🚀 部署
 
 项目支持多种部署方式：
@@ -129,6 +133,11 @@ git push origin v1.0.0
 详细 Electron 打包指南请查看 [ELECTRON.md](./docs/ELECTRON.md)
 
 详细部署指南请查看 [DEPLOY.md](./docs/DEPLOY.md)
+
+更多文档请查看 [docs](./docs/) 目录，包括：
+- [更新日志](./docs/summary/CHANGELOG.md) - 版本更新记录
+- [开发总结](./docs/summary/2026-02-development-summary.md) - 开发工作总结
+- [问题解决指南](./docs/summary/troubleshooting.md) - 常见问题解决方案
 
 ### 快速部署
 
