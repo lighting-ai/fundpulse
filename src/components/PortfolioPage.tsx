@@ -372,24 +372,31 @@ export function PortfolioPage() {
     setEditingHoldingFundCode(fundCode);
     setIsEditingHolding(true);
     
+    // 获取当前净值（优先使用 displayData，其次使用 fund 中的净值）
+    const displayData = fundDisplayData.get(fundCode);
+    const currentNav = displayData?.netValue || fund.estimateNav || fund.nav || 0;
+    
     // 预填当前持仓数据
     if (fund.userAmount && fund.userAmount > 0) {
       // 如果有持仓金额，使用金额模式
       setInputMode('amount');
       setHoldingAmount(fund.userAmount.toFixed(2));
-      setHoldingCost(fund.userCost ? fund.userCost.toFixed(4) : '');
+      // 如果有成本价就使用成本价，否则使用当前净值
+      setHoldingCost(fund.userCost ? fund.userCost.toFixed(4) : (currentNav > 0 ? currentNav.toFixed(4) : ''));
       setHoldingShares('');
     } else if (fund.userShares && fund.userShares > 0) {
       // 如果有持仓份额，使用份额模式
       setInputMode('shares');
       setHoldingShares(fund.userShares.toFixed(2));
-      setHoldingCost(fund.userCost ? fund.userCost.toFixed(4) : '');
+      // 如果有成本价就使用成本价，否则使用当前净值
+      setHoldingCost(fund.userCost ? fund.userCost.toFixed(4) : (currentNav > 0 ? currentNav.toFixed(4) : ''));
       setHoldingAmount('');
     } else {
       // 默认使用金额模式
       setInputMode('amount');
       setHoldingAmount('');
-      setHoldingCost('');
+      // 默认填充当前净值
+      setHoldingCost(currentNav > 0 ? currentNav.toFixed(4) : '');
       setHoldingShares('');
     }
     
@@ -1023,8 +1030,7 @@ export function PortfolioPage() {
           <table className="w-full text-left table-fixed">
             <thead className="bg-white/5 text-xs text-text-tertiary uppercase tracking-wider sticky top-0 z-10">
               <tr>
-                <th className="py-3 pl-6 w-[200px]">基金名称</th>
-                <th className="py-3 w-[100px]">类型</th>
+                <th className="py-3 pl-6 w-[220px]">基金名称</th>
                 <th className="py-3 w-[130px]">最新净值</th>
                 <th className="py-3 w-[150px]">持有金额</th>
                 <th className="py-3 w-[130px]">今日盈亏</th>
@@ -1035,7 +1041,7 @@ export function PortfolioPage() {
             <tbody className="divide-y divide-white/5">
               {filteredWatchlist.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-text-tertiary">
+                  <td colSpan={6} className="py-12 text-center text-text-tertiary">
                     {displayMode === 'category' && selectedCategory !== '全部'
                       ? `暂无"${selectedCategory}"分类的基金`
                       : '暂无自选基金，请前往首页添加'}
@@ -1080,13 +1086,14 @@ export function PortfolioPage() {
                           {fund.fundName}
                           <i className="ri-external-link-line text-xs opacity-0 group-hover/name:opacity-100 transition-opacity text-neon-blue" />
                         </div>
-                        <div className="text-xs text-text-tertiary mt-1 font-mono">
-                          {fund.fundCode}
-                        </div>
-                      </td>
-                      <td className="py-4">
-                        <div className="text-sm text-text-primary">
-                          {fund.category || '--'}
+                        <div className="text-xs text-text-tertiary mt-1 font-mono flex items-center gap-2">
+                          <span>{fund.fundCode}</span>
+                          {fund.category && (
+                            <>
+                              <span className="text-white/40">·</span>
+                              <span className="text-white/50">{fund.category}</span>
+                            </>
+                          )}
                         </div>
                       </td>
                       <td className="py-4">

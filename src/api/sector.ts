@@ -2,6 +2,7 @@
  * 东方财富板块 API 封装
  * API: https://push2.eastmoney.com/api/qt/clist/get
  */
+import { buildApiUrl } from '../utils/apiUtils';
 
 export interface SectorData {
   // 基础信息
@@ -57,8 +58,26 @@ export const fetchSectors = async (sortType: 'up' | 'down' = 'up'): Promise<Sect
   // 跌幅榜：po=0
   const po = sortType === 'up' ? '1' : '0';
   
-  // 使用你提供的完整 fields 列表
-  const url = `https://push2.eastmoney.com/api/qt/clist/get?np=1&fltt=1&invt=2&fs=m:90+t:2+f:!50&fields=f12,f13,f14,f1,f2,f4,f3,f152,f20,f8,f104,f105,f128,f140,f141,f207,f208,f209,f136,f222&fid=f3&pn=1&pz=20&po=${po}&dect=1`;
+  // 构建查询参数
+  const params = {
+    np: '1',
+    fltt: '1',
+    invt: '2',
+    fs: 'm:90+t:2+f:!50',
+    fields: 'f12,f13,f14,f1,f2,f4,f3,f152,f20,f8,f104,f105,f128,f140,f141,f207,f208,f209,f136,f222',
+    fid: 'f3',
+    pn: '1',
+    pz: '20',
+    po: po,
+    dect: '1',
+  };
+  
+  // 使用代理路径（生产环境）或原始 URL（开发环境）
+  const url = buildApiUrl(
+    `https://push2.eastmoney.com/api/qt/clist/get`,
+    `/api/sector-list`,
+    params
+  );
 
   try {
     const response = await fetch(url);

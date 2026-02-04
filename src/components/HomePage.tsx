@@ -68,7 +68,6 @@ export function HomePage() {
   // 处理快捷添加自选
   const handleQuickAdd = async (result: FundSearchResult) => {
     const codeToAdd = result.code;
-    setIsValidating(true);
     setAddMessage('');
     setSearchResults([]);
     
@@ -96,8 +95,6 @@ export function HomePage() {
       }
     } catch (error) {
       setAddMessage(error instanceof Error ? error.message : '验证失败，请重试');
-    } finally {
-      setIsValidating(false);
     }
   };
 

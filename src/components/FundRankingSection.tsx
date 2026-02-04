@@ -21,6 +21,8 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
   const [pendingFund, setPendingFund] = useState<RankedFund | null>(null);
   const [holdingAmount, setHoldingAmount] = useState<string>('');
   const [holdingCost, setHoldingCost] = useState<string>('');
+  const [holdingShares, setHoldingShares] = useState<string>('');
+  const [inputMode, setInputMode] = useState<'amount' | 'shares'>('amount');
   const [isAdding, setIsAdding] = useState(false);
   const [addMessage, setAddMessage] = useState('');
 
@@ -85,24 +87,57 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
 
     // 显示持仓输入弹窗
     setPendingFund(fund);
+    // 默认填充当前净值到持仓成本
+    if (fund.nav && fund.nav > 0) {
+      setHoldingCost(fund.nav.toFixed(4));
+    } else {
+      setHoldingCost('');
+    }
     setShowHoldingModal(true);
   };
 
   const handleConfirmHolding = async () => {
     if (!pendingFund) return;
 
-    const amount = parseFloat(holdingAmount) || 0;
-    const cost = parseFloat(holdingCost) || undefined;
-
     setIsAdding(true);
     setAddMessage('');
-    
+
+    let amount = 0;
+    let cost = parseFloat(holdingCost) || undefined;
+
+    if (inputMode === 'amount') {
+      // 金额模式：使用输入的金额
+      amount = parseFloat(holdingAmount) || 0;
+    } else {
+      // 份额模式：需要先获取成本价，然后计算金额
+      const shares = parseFloat(holdingShares) || 0;
+      if (shares <= 0) {
+        setAddMessage('请输入有效的持仓数量');
+        setIsAdding(false);
+        return;
+      }
+
+      if (!cost) {
+        // 如果没有输入成本价，尝试使用当前净值
+        cost = pendingFund.nav || undefined;
+        if (!cost || cost <= 0) {
+          setAddMessage('请先输入持仓成本价');
+          setIsAdding(false);
+          return;
+        }
+      }
+
+      amount = shares * cost;
+    }
+
     try {
       const result = await addFund(pendingFund.code, amount, cost);
       
       if (result.success) {
         setHoldingAmount('');
         setHoldingCost('');
+        setHoldingShares('');
+        setInputMode('amount');
         setPendingFund(null);
         setShowHoldingModal(false);
         setAddMessage('添加成功');
@@ -117,30 +152,14 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
     }
   };
 
-  const handleSkipHolding = async () => {
-    if (!pendingFund) return;
-
-    setIsAdding(true);
+  const handleCloseHoldingModal = () => {
+    setShowHoldingModal(false);
+    setHoldingAmount('');
+    setHoldingCost('');
+    setHoldingShares('');
+    setInputMode('amount');
+    setPendingFund(null);
     setAddMessage('');
-    
-    try {
-      const result = await addFund(pendingFund.code);
-      
-      if (result.success) {
-        setHoldingAmount('');
-        setHoldingCost('');
-        setPendingFund(null);
-        setShowHoldingModal(false);
-        setAddMessage('添加成功');
-        setTimeout(() => setAddMessage(''), 2000);
-      } else {
-        setAddMessage(result.message);
-      }
-    } catch (error) {
-      setAddMessage(error instanceof Error ? error.message : '添加失败，请重试');
-    } finally {
-      setIsAdding(false);
-    }
   };
 
   return (
@@ -366,98 +385,168 @@ export function FundRankingSection({ onFundClick }: FundRankingSectionProps) {
         )}
       </div>
 
-      {/* 持仓金额输入弹窗 */}
+      {/* 设置持仓金额弹窗 */}
       {showHoldingModal && pendingFund && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card p-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="glass-card p-4 sm:p-6 w-full max-w-md animate-in zoom-in-95">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">设置持仓金额</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-text-primary">
+                设置持仓金额
+              </h3>
               <button
-                onClick={() => {
-                  setShowHoldingModal(false);
-                  setHoldingAmount('');
-                  setHoldingCost('');
-                  setPendingFund(null);
-                }}
-                className="text-text-secondary hover:text-text-primary active:text-neon-red active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10 p-1"
+                onClick={handleCloseHoldingModal}
+                className="text-text-tertiary hover:text-text-primary active:text-neon-red active:scale-90 transition-all duration-150 rounded-lg hover:bg-white/5 active:bg-white/10 p-1"
               >
                 <i className="ri-close-line text-xl" />
               </button>
             </div>
 
             <div className="space-y-4">
+              {/* 基金信息 */}
               <div className="p-3 bg-white/5 rounded-lg border border-white/10">
                 <div className="text-xs text-text-tertiary mb-1">基金名称</div>
                 <div className="text-sm font-medium text-text-primary">{pendingFund.name}</div>
                 <div className="text-xs text-text-tertiary mt-1 font-mono">{pendingFund.code}</div>
               </div>
 
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">
-                  持仓金额（元）<span className="text-text-tertiary ml-1">可选</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={holdingAmount}
-                  onChange={(e) => setHoldingAmount(e.target.value)}
-                  placeholder="例如：10000"
-                  className="w-full px-4 py-2 bg-bg-elevated border border-border-subtle rounded-lg text-text-primary font-mono focus:outline-none focus:border-accent-blue"
-                  autoFocus
-                />
-                <div className="text-xs text-text-tertiary mt-1">
-                  输入您的持仓金额，系统将自动计算持仓份额
-                </div>
+              {/* 输入模式切换 */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => {
+                    setInputMode('amount');
+                    setHoldingAmount('');
+                    setHoldingShares('');
+                  }}
+                  className={clsx(
+                    'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                    inputMode === 'amount'
+                      ? 'bg-neon-blue/20 text-neon-blue border-2 border-neon-blue shadow-[0_0_20px_rgba(0,212,255,0.3)] active:scale-95'
+                      : 'bg-white/5 text-text-secondary hover:bg-white/10 active:bg-white/15 active:scale-95 border-2 border-transparent'
+                  )}
+                >
+                  按金额输入
+                </button>
+                <button
+                  onClick={() => {
+                    setInputMode('shares');
+                    setHoldingAmount('');
+                    setHoldingShares('');
+                  }}
+                  className={clsx(
+                    'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                    inputMode === 'shares'
+                      ? 'bg-neon-blue/20 text-neon-blue border-2 border-neon-blue shadow-[0_0_20px_rgba(0,212,255,0.3)] active:scale-95'
+                      : 'bg-white/5 text-text-secondary hover:bg-white/10 active:bg-white/15 active:scale-95 border-2 border-transparent'
+                  )}
+                >
+                  按数量输入
+                </button>
               </div>
 
-              {holdingAmount && parseFloat(holdingAmount) > 0 && (
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">
-                    成本价（元/份）<span className="text-text-tertiary ml-1">可选</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={holdingCost}
-                    onChange={(e) => setHoldingCost(e.target.value)}
-                    placeholder="留空则使用当前净值"
-                    className="w-full px-4 py-2 bg-bg-elevated border border-border-subtle rounded-lg text-text-primary font-mono focus:outline-none focus:border-accent-blue"
-                  />
-                  <div className="text-xs text-text-tertiary mt-1">
-                    留空将使用当前净值（{pendingFund.nav > 0 ? pendingFund.nav.toFixed(4) : '--'}）作为成本价
+              {inputMode === 'amount' ? (
+                <>
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">持仓金额（元）</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={holdingAmount}
+                      onChange={(e) => setHoldingAmount(e.target.value)}
+                      placeholder="请输入持仓金额（可选）"
+                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue font-mono"
+                      autoFocus
+                    />
                   </div>
-                </div>
+
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">持仓成本（元/份，可选）</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={holdingCost}
+                      onChange={(e) => setHoldingCost(e.target.value)}
+                      placeholder="请输入持仓成本，不填则使用当前净值"
+                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue font-mono"
+                    />
+                    {holdingAmount && holdingCost && parseFloat(holdingAmount) > 0 && parseFloat(holdingCost) > 0 && (
+                      <div className="mt-2 text-xs text-text-tertiary">
+                        预计持仓份额：{(parseFloat(holdingAmount) / parseFloat(holdingCost)).toFixed(2)} 份
+                      </div>
+                    )}
+                    {!holdingCost && pendingFund.nav > 0 && (
+                      <div className="mt-2 text-xs text-text-tertiary">
+                        当前净值：{pendingFund.nav.toFixed(4)} 元/份
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">持仓成本（元/份）</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={holdingCost}
+                      onChange={(e) => setHoldingCost(e.target.value)}
+                      placeholder="请输入持仓成本价"
+                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue font-mono"
+                      autoFocus
+                    />
+                    {!holdingCost && pendingFund.nav > 0 && (
+                      <div className="mt-2 text-xs text-text-tertiary">
+                        当前净值：{pendingFund.nav.toFixed(4)} 元/份（可作为参考）
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">持仓数量（份）</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={holdingShares}
+                      onChange={(e) => setHoldingShares(e.target.value)}
+                      placeholder="请输入持仓数量"
+                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue font-mono"
+                    />
+                    {holdingCost && holdingShares && parseFloat(holdingCost) > 0 && parseFloat(holdingShares) > 0 && (
+                      <div className="mt-2 text-xs text-text-tertiary">
+                        预计持仓金额：¥{(parseFloat(holdingCost) * parseFloat(holdingShares)).toLocaleString('zh-CN', { maximumFractionDigits: 2 })}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
 
               {addMessage && (
-                <div
-                  className={clsx(
-                    'text-sm p-2 rounded',
-                    addMessage.includes('成功')
-                      ? 'text-down-primary bg-down-glow/20'
-                      : 'text-up-primary bg-up-glow/20'
-                  )}
-                >
+                <div className={clsx(
+                  'text-sm p-2 rounded',
+                  addMessage.includes('成功') ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10'
+                )}>
                   {addMessage}
                 </div>
               )}
 
               <div className="flex gap-3">
                 <button
-                  onClick={handleSkipHolding}
-                  disabled={isAdding}
-                  className="flex-1 px-4 py-2.5 border border-border-subtle rounded-lg hover:bg-bg-elevated active:bg-white/10 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 font-medium"
-                >
-                  跳过
-                </button>
-                <button
                   onClick={handleConfirmHolding}
                   disabled={isAdding}
-                  className="flex-1 px-4 py-2.5 bg-neon-blue/20 hover:bg-neon-blue/30 active:bg-neon-blue/40 text-neon-blue disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 rounded-lg transition-all duration-150 font-medium shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md"
+                  className={clsx(
+                    'flex-1 px-4 py-2.5 rounded-lg font-medium transition-all duration-150',
+                    isAdding
+                      ? 'bg-white/5 text-text-tertiary cursor-not-allowed disabled:active:scale-100'
+                      : 'bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 active:bg-neon-blue/40 active:scale-95 shadow-lg hover:shadow-xl hover:shadow-neon-blue/20 active:shadow-md'
+                  )}
                 >
                   {isAdding ? '添加中...' : '确认添加'}
+                </button>
+                <button
+                  onClick={handleCloseHoldingModal}
+                  disabled={isAdding}
+                  className="px-4 py-2.5 bg-white/5 text-text-secondary rounded-lg hover:bg-white/10 active:bg-white/15 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 font-medium"
+                >
+                  返回
                 </button>
               </div>
             </div>

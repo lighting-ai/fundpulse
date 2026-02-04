@@ -1,6 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+// 获取当前文件目录（ES modules 兼容）
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// 读取 package.json 获取版本号
+const packageJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
+const appVersion = packageJson.version
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,8 +21,18 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH || (process.env.ELECTRON ? './' : '/fundpulse/'),
   plugins: [
     react(),
+    // 自定义插件：注入版本号到 HTML
+    {
+      name: 'inject-version',
+      transformIndexHtml(html) {
+        return html.replace(
+          /<meta\s+name="version"\s+content="[^"]*"/i,
+          `<meta name="version" content="${appVersion}"`
+        )
+      },
+    },
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'autoUpdate', // 自动更新，但我们会监听更新事件并强制刷新
       // 明确指定 Service Worker 文件名和路径
       filename: 'sw.js',
       strategies: 'generateSW',
@@ -19,8 +40,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         // 清理旧的 Service Worker
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+        skipWaiting: true, // 新版本立即激活
+        clientsClaim: true, // 立即控制所有客户端
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fundgz\.1234567\.com\.cn/,

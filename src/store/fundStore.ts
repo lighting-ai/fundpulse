@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { db, UserWatchlist, NavHistory } from '../db/schema';
 import { fetchFundRealtime, fetchFundHistory, validateFundCode, searchFunds } from '../api/eastmoney';
+import { supportsRealtimeEstimate } from '../utils/fundDataManager';
 
 export interface FundRealtimeInfo extends UserWatchlist {
   nav?: number;
@@ -32,6 +33,7 @@ interface FundStore {
   selectFund: (code: string | null) => void;
   refreshFund: (code: string) => Promise<void>;
   updateUserHolding: (code: string, amount: number, cost?: number) => Promise<void>;
+  refreshFundTypes: () => Promise<{ success: number; failed: number }>;
 }
 
 export const useFundStore = create<FundStore>((set, get) => ({
@@ -132,17 +134,30 @@ export const useFundStore = create<FundStore>((set, get) => ({
           userShares = amount / cost;
         } else {
           // 如果没有提供成本价，获取当前净值作为成本价
-          try {
-            const realtimeData = await fetchFundRealtime(code);
-            const currentNav = realtimeData.nav || realtimeData.estimateNav || 0;
-            if (currentNav > 0) {
-              userCostPrice = currentNav;
-              userShares = amount / currentNav;
-            } else {
-              console.warn('无法获取当前净值，持仓份额将设为0');
+          // 检查基金是否支持实时估值（排除ETF等）
+          const fundName = validation.name || '';
+          const shouldFetchRealtime = supportsRealtimeEstimate(
+            fundType, // FUNDTYPE，如"002"
+            ftype, // FTYPE，如"混合型-偏股"
+            fundName // 基金名称
+          );
+
+          if (shouldFetchRealtime) {
+            try {
+              const realtimeData = await fetchFundRealtime(code);
+              const currentNav = realtimeData.nav || realtimeData.estimateNav || 0;
+              if (currentNav > 0) {
+                userCostPrice = currentNav;
+                userShares = amount / currentNav;
+              } else {
+                console.warn('无法获取当前净值，持仓份额将设为0');
+              }
+            } catch (e) {
+              console.warn('获取实时净值失败，稍后设置持仓:', e);
             }
-          } catch (e) {
-            console.warn('获取实时净值失败，稍后设置持仓:', e);
+          } else {
+            // ETF 等不支持实时估值的基金，提示用户手动输入成本价
+            console.warn(`基金 ${fundName || code} 不支持实时估值，请手动输入成本价`);
           }
         }
       }
@@ -215,9 +230,29 @@ export const useFundStore = create<FundStore>((set, get) => ({
       watchlist: watchlist.map(fund => ({ ...fund, isLoading: true })),
     });
 
-    // 并发获取所有基金的实时数据
+    // 并发获取所有基金的实时数据（只对支持实时估值的基金发起请求）
     const updates = await Promise.allSettled(
       watchlist.map(async (fund) => {
+        // 检查基金是否支持实时估值（排除ETF等）
+        const shouldFetchRealtime = supportsRealtimeEstimate(
+          fund.fundType, // FUNDTYPE，如"002"
+          fund.ftype, // FTYPE，如"混合型-偏股"
+          fund.fundName // 基金名称
+        );
+
+        if (!shouldFetchRealtime) {
+          // 不支持实时估值的基金（如ETF），直接返回，不发起请求
+          return {
+            ...fund,
+            isLoading: false,
+            error: undefined,
+            // 保留用户持仓数据
+            userShares: fund.userShares,
+            userCost: fund.userCost,
+            userAmount: fund.userAmount,
+          };
+        }
+
         try {
           const data = await fetchFundRealtime(fund.fundCode);
           return {
@@ -266,22 +301,34 @@ export const useFundStore = create<FundStore>((set, get) => ({
   // 刷新单个基金数据
   refreshFund: async (code: string) => {
     try {
-      // 更新实时数据
-      const data = await fetchFundRealtime(code);
       const { watchlist } = get();
-      const updated = watchlist.map(fund =>
-        fund.fundCode === code
-          ? {
-              ...fund,
-              nav: data.nav,
-              estimateNav: data.estimateNav,
-              estimateGrowth: data.estimateGrowth,
-              valuationTime: data.valuationTime,
-              fundName: data.name || fund.fundName,
-            }
-          : fund
+      const fund = watchlist.find(f => f.fundCode === code);
+      
+      // 检查基金是否支持实时估值（排除ETF等）
+      const shouldFetchRealtime = fund && supportsRealtimeEstimate(
+        fund.fundType, // FUNDTYPE，如"002"
+        fund.ftype, // FTYPE，如"混合型-偏股"
+        fund.fundName // 基金名称
       );
-      set({ watchlist: updated });
+
+      if (shouldFetchRealtime) {
+        // 更新实时数据（只对支持实时估值的基金）
+        const data = await fetchFundRealtime(code);
+        const updated = watchlist.map(f =>
+          f.fundCode === code
+            ? {
+                ...f,
+                nav: data.nav,
+                estimateNav: data.estimateNav,
+                estimateGrowth: data.estimateGrowth,
+                valuationTime: data.valuationTime,
+                fundName: data.name || f.fundName,
+              }
+            : f
+        );
+        set({ watchlist: updated });
+      }
+      // 如果不支持实时估值（如ETF），跳过实时数据更新
 
       // 更新历史数据
       const history = await fetchFundHistory(code);

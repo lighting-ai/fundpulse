@@ -113,6 +113,22 @@ handle /api/fund-search* {
 	}
 }
 
+# API 代理：热门板块接口
+handle /api/sector-list* {
+	# 重写路径：将 /api/sector-list?xxx 重写为 /api/qt/clist/get?xxx
+	uri replace /api/sector-list /api/qt/clist/get
+	
+	# 反向代理到目标服务器
+	reverse_proxy https://push2.eastmoney.com {
+		header_up Referer "https://www.eastmoney.com/"
+		header_up Host "push2.eastmoney.com"
+		# 移除可能干扰的 headers
+		header_down -X-Content-Type-Options
+		header_down -X-Frame-Options
+		header_down -X-XSS-Protection
+	}
+}
+
 # 根路径重定向到子路径
 handle / {
 	redir / /fundpulse/ 301

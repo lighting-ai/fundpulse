@@ -60,6 +60,19 @@ export function FundList() {
         return;
       }
 
+      // 尝试获取当前净值
+      try {
+        const { fetchFundRealtime } = await import('../api/eastmoney');
+        const realtimeData = await fetchFundRealtime(codeToAdd);
+        const currentNav = realtimeData.nav || realtimeData.estimateNav || 0;
+        if (currentNav > 0) {
+          setHoldingCost(currentNav.toFixed(4));
+        }
+      } catch (e) {
+        // 获取净值失败不影响添加流程
+        console.warn('获取当前净值失败:', e);
+      }
+
       // 验证通过，显示持仓输入弹窗
       setPendingFundCode(codeToAdd);
       setShowAddModal(false);

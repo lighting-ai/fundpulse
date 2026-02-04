@@ -1510,7 +1510,8 @@ export interface FundSearchResult {
   name: string;
   shortName?: string;
   nav?: number;
-  fundType?: string;
+  fundType?: string; // FTYPE，如"混合型-偏股"
+  fundTypeCode?: string; // FUNDTYPE，如"002"
   company?: string;
 }
 
